@@ -69,6 +69,15 @@ const Index = () => {
   if (loading) return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
 
   if (!authed) {
+    const redirectUri = window.location.origin + "/";
+    const copyUri = async () => {
+      try {
+        await navigator.clipboard.writeText(redirectUri);
+        toast.success("Redirect URI copiada");
+      } catch {
+        toast.error("No se pudo copiar");
+      }
+    };
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-6 gap-8">
         <h1 className="text-5xl font-black neon-text text-primary">HITSTER</h1>
@@ -82,6 +91,16 @@ const Index = () => {
         <p className="text-xs text-muted-foreground text-center max-w-xs">
           Necesitas una cuenta de Spotify Premium para reproducir música.
         </p>
+        <div className="w-full max-w-sm flex flex-col gap-2 p-4 rounded-xl border border-primary/40 bg-card">
+          <div className="text-xs text-muted-foreground uppercase tracking-wider">Redirect URI</div>
+          <div className="text-sm font-mono break-all text-primary">{redirectUri}</div>
+          <Button onClick={copyUri} variant="outline" className="h-12 rounded-xl border-primary/60">
+            <Copy className="h-4 w-4 mr-2" /> Copiar
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            Añade esta URL exacta en tu app de Spotify Developer Dashboard.
+          </p>
+        </div>
       </main>
     );
   }
