@@ -61,8 +61,8 @@ const Index = () => {
     }
   };
 
-  const handleRewind = async () => {
-    await seekBy(-15000);
+  const handleRestart = async () => {
+    await seekTo(0);
     if (isPaused) {
       await resumePlayback();
       setIsPaused(false);
