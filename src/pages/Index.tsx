@@ -185,11 +185,19 @@ const Index = () => {
         {phase === "playing" && (
           <div className="w-full flex flex-col gap-4">
             <div className="text-center text-lg text-muted-foreground animate-pulse">
-              Sonando...
+              {isPaused ? "En pausa" : "Sonando..."}
             </div>
             <Button onClick={handleReveal} className="h-24 text-2xl rounded-2xl neon-glow bg-primary hover:bg-primary/90">
               <Eye className="h-8 w-8 mr-3" /> REVELAR INFO
             </Button>
+            <div className="grid grid-cols-2 gap-3">
+              <Button onClick={handleTogglePause} variant="outline" className="h-16 text-lg rounded-2xl border-primary/60">
+                {isPaused ? (<><Play className="h-6 w-6 mr-2 fill-current" /> PLAY</>) : (<><Pause className="h-6 w-6 mr-2 fill-current" /> PAUSA</>)}
+              </Button>
+              <Button onClick={handleRewind} variant="outline" className="h-16 text-lg rounded-2xl border-primary/60">
+                <RotateCcw className="h-6 w-6 mr-2" /> -15s
+              </Button>
+            </div>
             <Button onClick={handleSkip} variant="outline" className="h-20 text-xl rounded-2xl border-primary/60">
               <SkipForward className="h-7 w-7 mr-3" /> SALTAR
             </Button>
