@@ -169,15 +169,50 @@ const Index = () => {
   return (
     <main className="min-h-screen flex flex-col p-4 gap-4">
       <header className="flex items-center justify-between">
-        <div className="flex flex-col">
+        <div className="flex flex-col min-w-0">
           <h1 className="text-2xl font-black neon-text text-primary">HITSTER</h1>
-          <span className="text-xs text-muted-foreground uppercase tracking-wider">
-            Playlist: {PLAYLIST_NAME}
+          <span className="text-xs text-muted-foreground uppercase tracking-wider truncate max-w-[200px]">
+            Playlist: {playlistName}
           </span>
         </div>
-        <Button variant="ghost" size="icon" onClick={() => { logout(); setAuthed(false); }}>
-          <LogOut className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label="Ajustes">
+                <Settings className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="bg-background border-primary/40">
+              <SheetHeader>
+                <SheetTitle className="text-primary neon-text">Cargar playlist</SheetTitle>
+              </SheetHeader>
+              <div className="flex flex-col gap-4 mt-6">
+                <Input
+                  value={playlistInput}
+                  onChange={(e) => setPlaylistInput(e.target.value)}
+                  placeholder="Pega el enlace o URI de tu playlist de Spotify"
+                  className="h-14 text-base border-primary/60"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Nota: Los años de listas personalizadas pueden corresponder a remasters.
+                </p>
+                <Button
+                  onClick={handleLoadPlaylist}
+                  disabled={loadingPlaylist || !playlistInput.trim()}
+                  className="h-14 text-lg rounded-2xl neon-glow bg-primary hover:bg-primary/90"
+                >
+                  {loadingPlaylist ? "Cargando..." : "Cargar Lista"}
+                </Button>
+                <div className="text-xs text-muted-foreground border-t border-primary/20 pt-3 mt-2">
+                  Playlist actual: <span className="text-primary">{playlistName}</span> ({songs.length} canciones)
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+          <Button variant="ghost" size="icon" onClick={() => { logout(); setAuthed(false); }} aria-label="Cerrar sesión">
+            <LogOut className="h-5 w-5" />
+          </Button>
+        </div>
       </header>
 
       {/* Marcador */}
