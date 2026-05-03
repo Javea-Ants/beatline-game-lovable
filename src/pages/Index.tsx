@@ -255,30 +255,31 @@ const Index = () => {
       <section className="flex-1 flex flex-col items-center justify-center gap-6">
         {phase === "idle" && (
           <button
+            key="idle"
             onClick={handlePlay}
-            className="h-64 w-64 rounded-full bg-primary text-primary-foreground neon-glow flex flex-col items-center justify-center text-4xl font-black active:scale-95 transition"
+            className="h-64 w-64 rounded-full bg-primary text-primary-foreground neon-glow-strong flex flex-col items-center justify-center text-4xl font-black active:scale-95 hover:scale-105 transition-transform duration-300 animate-scale-in animate-neon-pulse"
           >
             <Play className="h-24 w-24 mb-2 fill-current" />
             PLAY
           </button>
         )}
 
-        {phase === "playing" && (
-          <div className="w-full flex flex-col gap-4">
-            <div className="text-center text-lg text-muted-foreground animate-pulse">
+        {phase === "playing" && song && (
+          <div key={song.uri} className="w-full flex flex-col gap-4 animate-fade-in">
+            <div className="text-center text-lg text-muted-foreground animate-pulse tracking-widest uppercase">
               {isPaused ? "En pausa" : "Sonando..."}
             </div>
-            <Button onClick={handleReveal} className="h-24 text-2xl rounded-2xl neon-glow bg-primary hover:bg-primary/90">
+            <Button onClick={handleReveal} className="h-24 text-2xl rounded-2xl neon-glow-strong bg-primary hover:bg-primary/90 neon-hover font-black tracking-wide">
               <Eye className="h-8 w-8 mr-3" /> REVELAR INFO
             </Button>
             <div className="grid grid-cols-3 gap-3">
-              <Button onClick={handleRestart} variant="outline" className="h-20 rounded-2xl border-2 border-primary bg-black hover:bg-primary/20 neon-glow">
+              <Button onClick={handleRestart} variant="outline" className="h-20 rounded-2xl border-2 border-primary bg-black hover:bg-primary/20 neon-hover">
                 <SkipBack className="!h-9 !w-9 fill-current" />
               </Button>
-              <Button onClick={handleSkip} variant="outline" className="h-20 rounded-2xl border-2 border-primary bg-black hover:bg-primary/20 neon-glow">
+              <Button onClick={handleSkip} variant="outline" className="h-20 rounded-2xl border-2 border-primary bg-black hover:bg-primary/20 neon-hover">
                 <SkipForward className="!h-9 !w-9 fill-current" />
               </Button>
-              <Button onClick={handleTogglePause} variant="outline" className="h-20 rounded-2xl border-2 border-primary bg-black hover:bg-primary/20 neon-glow">
+              <Button onClick={handleTogglePause} variant="outline" className="h-20 rounded-2xl border-2 border-primary bg-black hover:bg-primary/20 neon-hover">
                 {isPaused ? <Play className="!h-9 !w-9 fill-current" /> : <Pause className="!h-9 !w-9 fill-current" />}
               </Button>
             </div>
@@ -288,9 +289,9 @@ const Index = () => {
       </section>
 
       {phase === "revealed" && song && (
-        <div className="fixed inset-0 z-50 bg-black flex flex-col p-6 gap-6 overflow-y-auto">
+        <div key={`reveal-${song.uri}`} className="fixed inset-0 z-50 bg-black flex flex-col p-6 gap-6 overflow-y-auto animate-fade-in">
           <div className="flex-1 flex flex-col items-center justify-center gap-6">
-            <div className="w-64 h-64 sm:w-80 sm:h-80 rounded-2xl overflow-hidden border-2 border-primary neon-glow bg-secondary flex items-center justify-center">
+            <div className="w-64 h-64 sm:w-80 sm:h-80 rounded-2xl overflow-hidden border-2 border-primary neon-glow-strong bg-secondary flex items-center justify-center animate-scale-in">
               {albumArt ? (
                 <img src={albumArt} alt={`Carátula de ${song.title} de ${song.artist}`} className="w-full h-full object-cover" />
               ) : (
@@ -298,19 +299,19 @@ const Index = () => {
               )}
             </div>
             <div
-              className="text-[7rem] sm:text-[10rem] font-black text-primary tracking-tighter leading-none"
+              className="text-[7rem] sm:text-[10rem] font-black text-primary tracking-tighter leading-none animate-scale-in"
               style={{ textShadow: "0 0 20px hsl(var(--neon)), 0 0 40px hsl(var(--neon)), 0 0 80px hsl(var(--neon) / 0.7)" }}
             >
               {song.year}
             </div>
-            <div className="text-center">
+            <div className="text-center animate-fade-in">
               <div className="text-3xl font-bold">{song.artist}</div>
               <div className="text-xl text-muted-foreground mt-1">{song.title}</div>
             </div>
           </div>
           <Button
             onClick={handleNext}
-            className="h-24 w-full text-2xl rounded-2xl neon-glow bg-primary hover:bg-primary/90 font-black"
+            className="h-24 w-full text-2xl rounded-2xl neon-glow-strong bg-primary hover:bg-primary/90 font-black tracking-wide neon-hover"
           >
             SIGUIENTE CANCIÓN
           </Button>
