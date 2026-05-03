@@ -38,6 +38,7 @@ const Index = () => {
       const s = pickRandom();
       setSong(s);
       setPhase("playing");
+      setIsPaused(false);
       await playTrack(s.uri);
     } catch (e: any) {
       toast.error("Error al reproducir. Necesitas Spotify Premium.");
@@ -50,8 +51,27 @@ const Index = () => {
     handlePlay();
   };
 
+  const handleTogglePause = async () => {
+    if (isPaused) {
+      await resumePlayback();
+      setIsPaused(false);
+    } else {
+      await pausePlayback();
+      setIsPaused(true);
+    }
+  };
+
+  const handleRewind = async () => {
+    await seekBy(-15000);
+    if (isPaused) {
+      await resumePlayback();
+      setIsPaused(false);
+    }
+  };
+
   const handleReveal = async () => {
     await pausePlayback();
+    setIsPaused(true);
     setPhase("revealed");
   };
 
