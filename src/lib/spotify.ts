@@ -180,3 +180,19 @@ export async function seekBy(deltaMs: number) {
 export async function seekTo(positionMs: number) {
   if (player) { try { await player.seek(positionMs); return; } catch {} }
 }
+
+export async function fetchTrack(uri: string): Promise<{ albumArt: string | null }> {
+  const id = uri.split(":").pop();
+  const token = await getAccessToken();
+  if (!token || !id) return { albumArt: null };
+  try {
+    const res = await fetch(`https://api.spotify.com/v1/tracks/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    const img = data?.album?.images?.[0]?.url || null;
+    return { albumArt: img };
+  } catch {
+    return { albumArt: null };
+  }
+}
