@@ -11,7 +11,9 @@ type Phase = "idle" | "playing" | "revealed";
 interface Team { name: string; score: number; tokens: number; }
 
 const Index = () => {
+  const PLAYLIST_NAME = "Temazos de varias décadas";
   const [authed, setAuthed] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState<Phase>("idle");
   const [song, setSong] = useState<Song | null>(null);
