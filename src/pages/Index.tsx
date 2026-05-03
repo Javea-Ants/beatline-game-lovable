@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { loginWithSpotify, handleRedirect, getAccessToken, playTrack, pausePlayback, logout } from "@/lib/spotify";
+import { loginWithSpotify, handleRedirect, getAccessToken, playTrack, pausePlayback, resumePlayback, seekBy, logout } from "@/lib/spotify";
 import { SONGS, type Song } from "@/lib/songs";
-import { Play, SkipForward, Eye, LogOut, Coins, Copy } from "lucide-react";
+import { Play, Pause, SkipForward, Eye, LogOut, Coins, Copy, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 type Phase = "idle" | "playing" | "revealed";
@@ -11,7 +11,9 @@ type Phase = "idle" | "playing" | "revealed";
 interface Team { name: string; score: number; tokens: number; }
 
 const Index = () => {
+  const PLAYLIST_NAME = "Temazos de varias décadas";
   const [authed, setAuthed] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState<Phase>("idle");
   const [song, setSong] = useState<Song | null>(null);
@@ -36,6 +38,7 @@ const Index = () => {
       const s = pickRandom();
       setSong(s);
       setPhase("playing");
+      setIsPaused(false);
       await playTrack(s.uri);
     } catch (e: any) {
       toast.error("Error al reproducir. Necesitas Spotify Premium.");
@@ -48,8 +51,27 @@ const Index = () => {
     handlePlay();
   };
 
+  const handleTogglePause = async () => {
+    if (isPaused) {
+      await resumePlayback();
+      setIsPaused(false);
+    } else {
+      await pausePlayback();
+      setIsPaused(true);
+    }
+  };
+
+  const handleRewind = async () => {
+    await seekBy(-15000);
+    if (isPaused) {
+      await resumePlayback();
+      setIsPaused(false);
+    }
+  };
+
   const handleReveal = async () => {
     await pausePlayback();
+    setIsPaused(true);
     setPhase("revealed");
   };
 
@@ -108,7 +130,12 @@ const Index = () => {
   return (
     <main className="min-h-screen flex flex-col p-4 gap-4">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-black neon-text text-primary">HITSTER</h1>
+        <div className="flex flex-col">
+          <h1 className="text-2xl font-black neon-text text-primary">HITSTER</h1>
+          <span className="text-xs text-muted-foreground uppercase tracking-wider">
+            Playlist: {PLAYLIST_NAME}
+          </span>
+        </div>
         <Button variant="ghost" size="icon" onClick={() => { logout(); setAuthed(false); }}>
           <LogOut className="h-5 w-5" />
         </Button>
@@ -158,11 +185,19 @@ const Index = () => {
         {phase === "playing" && (
           <div className="w-full flex flex-col gap-4">
             <div className="text-center text-lg text-muted-foreground animate-pulse">
-              Sonando...
+              {isPaused ? "En pausa" : "Sonando..."}
             </div>
             <Button onClick={handleReveal} className="h-24 text-2xl rounded-2xl neon-glow bg-primary hover:bg-primary/90">
               <Eye className="h-8 w-8 mr-3" /> REVELAR INFO
             </Button>
+            <div className="grid grid-cols-2 gap-3">
+              <Button onClick={handleTogglePause} variant="outline" className="h-16 text-lg rounded-2xl border-primary/60">
+                {isPaused ? (<><Play className="h-6 w-6 mr-2 fill-current" /> PLAY</>) : (<><Pause className="h-6 w-6 mr-2 fill-current" /> PAUSA</>)}
+              </Button>
+              <Button onClick={handleRewind} variant="outline" className="h-16 text-lg rounded-2xl border-primary/60">
+                <RotateCcw className="h-6 w-6 mr-2" /> -15s
+              </Button>
+            </div>
             <Button onClick={handleSkip} variant="outline" className="h-20 text-xl rounded-2xl border-primary/60">
               <SkipForward className="h-7 w-7 mr-3" /> SALTAR
             </Button>

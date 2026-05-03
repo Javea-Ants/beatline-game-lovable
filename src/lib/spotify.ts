@@ -148,10 +148,35 @@ export async function playTrack(uri: string) {
 }
 
 export async function pausePlayback() {
+  if (player) { try { await player.pause(); return; } catch {} }
   const token = await getAccessToken();
   if (!deviceId) return;
   await fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${deviceId}`, {
     method: "PUT",
     headers: { Authorization: `Bearer ${token}` },
   });
+}
+
+export async function resumePlayback() {
+  if (player) { try { await player.resume(); return; } catch {} }
+  const token = await getAccessToken();
+  if (!deviceId) return;
+  await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function seekBy(deltaMs: number) {
+  if (!player) return;
+  try {
+    const state = await player.getCurrentState();
+    if (!state) return;
+    const next = Math.max(0, state.position + deltaMs);
+    await player.seek(next);
+  } catch {}
+}
+
+export async function seekTo(positionMs: number) {
+  if (player) { try { await player.seek(positionMs); return; } catch {} }
 }
