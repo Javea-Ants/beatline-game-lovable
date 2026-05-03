@@ -17,6 +17,7 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState<Phase>("idle");
   const [song, setSong] = useState<Song | null>(null);
+  const [albumArt, setAlbumArt] = useState<string | null>(null);
   const [teams, setTeams] = useState<Team[]>([
     { name: "Equipo 1", score: 0, tokens: 3 },
     { name: "Equipo 2", score: 0, tokens: 3 },
