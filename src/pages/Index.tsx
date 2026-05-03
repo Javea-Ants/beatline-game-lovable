@@ -1,23 +1,31 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { loginWithSpotify, handleRedirect, getAccessToken, playTrack, pausePlayback, resumePlayback, seekTo, logout, fetchTrack } from "@/lib/spotify";
+import { Input } from "@/components/ui/input";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { loginWithSpotify, handleRedirect, getAccessToken, playTrack, pausePlayback, resumePlayback, seekTo, logout, fetchTrack, extractPlaylistId, fetchPlaylistSongs } from "@/lib/spotify";
 import { SONGS, type Song } from "@/lib/songs";
-import { Play, Pause, SkipForward, SkipBack, Eye, LogOut, Coins, Copy, Disc3 } from "lucide-react";
+import { Play, Pause, SkipForward, SkipBack, Eye, LogOut, Coins, Copy, Disc3, Settings } from "lucide-react";
 import { toast } from "sonner";
 
 type Phase = "idle" | "playing" | "revealed";
 
 interface Team { name: string; score: number; tokens: number; }
 
+const DEFAULT_PLAYLIST_NAME = "Temazos de varias décadas";
+
 const Index = () => {
-  const PLAYLIST_NAME = "Temazos de varias décadas";
   const [authed, setAuthed] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState<Phase>("idle");
   const [song, setSong] = useState<Song | null>(null);
   const [albumArt, setAlbumArt] = useState<string | null>(null);
+  const [playlistName, setPlaylistName] = useState(DEFAULT_PLAYLIST_NAME);
+  const [songs, setSongs] = useState<Song[]>(SONGS);
+  const [playlistInput, setPlaylistInput] = useState("");
+  const [loadingPlaylist, setLoadingPlaylist] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [teams, setTeams] = useState<Team[]>([
     { name: "Equipo 1", score: 0, tokens: 3 },
     { name: "Equipo 2", score: 0, tokens: 3 },
