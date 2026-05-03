@@ -78,9 +78,11 @@ const Index = () => {
     setPhase("revealed");
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     setPhase("idle");
     setSong(null);
+    setAlbumArt(null);
+    await handlePlay();
   };
 
   const adjustScore = (i: number, delta: number) => {
