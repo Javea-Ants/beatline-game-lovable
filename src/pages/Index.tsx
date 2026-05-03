@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { loginWithSpotify, handleRedirect, getAccessToken, playTrack, pausePlayback, resumePlayback, seekBy, logout } from "@/lib/spotify";
+import { loginWithSpotify, handleRedirect, getAccessToken, playTrack, pausePlayback, resumePlayback, seekTo, logout } from "@/lib/spotify";
 import { SONGS, type Song } from "@/lib/songs";
-import { Play, Pause, SkipForward, Eye, LogOut, Coins, Copy, RotateCcw } from "lucide-react";
+import { Play, Pause, SkipForward, SkipBack, Eye, LogOut, Coins, Copy } from "lucide-react";
 import { toast } from "sonner";
 
 type Phase = "idle" | "playing" | "revealed";
@@ -61,8 +61,8 @@ const Index = () => {
     }
   };
 
-  const handleRewind = async () => {
-    await seekBy(-15000);
+  const handleRestart = async () => {
+    await seekTo(0);
     if (isPaused) {
       await resumePlayback();
       setIsPaused(false);
@@ -190,17 +190,17 @@ const Index = () => {
             <Button onClick={handleReveal} className="h-24 text-2xl rounded-2xl neon-glow bg-primary hover:bg-primary/90">
               <Eye className="h-8 w-8 mr-3" /> REVELAR INFO
             </Button>
-            <div className="grid grid-cols-2 gap-3">
-              <Button onClick={handleTogglePause} variant="outline" className="h-16 text-lg rounded-2xl border-primary/60">
-                {isPaused ? (<><Play className="h-6 w-6 mr-2 fill-current" /> PLAY</>) : (<><Pause className="h-6 w-6 mr-2 fill-current" /> PAUSA</>)}
+            <div className="grid grid-cols-3 gap-3">
+              <Button onClick={handleRestart} variant="outline" className="h-20 rounded-2xl border-2 border-primary bg-black hover:bg-primary/20 neon-glow">
+                <SkipBack className="!h-9 !w-9 fill-current" />
               </Button>
-              <Button onClick={handleRewind} variant="outline" className="h-16 text-lg rounded-2xl border-primary/60">
-                <RotateCcw className="h-6 w-6 mr-2" /> -15s
+              <Button onClick={handleSkip} variant="outline" className="h-20 rounded-2xl border-2 border-primary bg-black hover:bg-primary/20 neon-glow">
+                <SkipForward className="!h-9 !w-9 fill-current" />
+              </Button>
+              <Button onClick={handleTogglePause} variant="outline" className="h-20 rounded-2xl border-2 border-primary bg-black hover:bg-primary/20 neon-glow">
+                {isPaused ? <Play className="!h-9 !w-9 fill-current" /> : <Pause className="!h-9 !w-9 fill-current" />}
               </Button>
             </div>
-            <Button onClick={handleSkip} variant="outline" className="h-20 text-xl rounded-2xl border-primary/60">
-              <SkipForward className="h-7 w-7 mr-3" /> SALTAR
-            </Button>
           </div>
         )}
 
