@@ -38,9 +38,11 @@ const Index = () => {
     try {
       const s = pickRandom();
       setSong(s);
+      setAlbumArt(null);
       setPhase("playing");
       setIsPaused(false);
       await playTrack(s.uri);
+      fetchTrack(s.uri).then((d) => setAlbumArt(d.albumArt));
     } catch (e: any) {
       toast.error("Error al reproducir. Necesitas Spotify Premium.");
       console.error(e);
