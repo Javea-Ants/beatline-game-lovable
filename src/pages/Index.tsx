@@ -130,7 +130,12 @@ const Index = () => {
   return (
     <main className="min-h-screen flex flex-col p-4 gap-4">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-black neon-text text-primary">HITSTER</h1>
+        <div className="flex flex-col">
+          <h1 className="text-2xl font-black neon-text text-primary">HITSTER</h1>
+          <span className="text-xs text-muted-foreground uppercase tracking-wider">
+            Playlist: {PLAYLIST_NAME}
+          </span>
+        </div>
         <Button variant="ghost" size="icon" onClick={() => { logout(); setAuthed(false); }}>
           <LogOut className="h-5 w-5" />
         </Button>
