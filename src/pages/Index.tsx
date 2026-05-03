@@ -218,21 +218,28 @@ const Index = () => {
       {/* Marcador */}
       <div className="grid grid-cols-2 gap-3">
         {teams.map((team, i) => (
-          <Card key={i} className="p-3 flex flex-col items-center gap-2 border-primary/40">
-            <div className="text-sm font-semibold text-muted-foreground">{team.name}</div>
-            <div className="text-4xl font-black neon-text text-primary">{team.score}</div>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="h-10 w-10 text-xl" onClick={() => adjustScore(i, -1)}>−</Button>
-              <Button size="sm" variant="outline" className="h-10 w-10 text-xl" onClick={() => adjustScore(i, 1)}>+</Button>
+          <Card key={i} className="p-3 flex flex-col items-center gap-3 border-primary/40 bg-card/60 backdrop-blur neon-hover">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{team.name}</div>
+            <div
+              key={team.score}
+              className="relative h-20 w-20 rounded-full flex items-center justify-center bg-black border-2 border-primary neon-glow-strong animate-scale-in"
+            >
+              <span className="text-3xl font-black text-primary neon-text tabular-nums">{team.score}</span>
             </div>
-            <div className="flex gap-1 mt-1">
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" className="h-10 w-10 text-xl border-primary/60 bg-black neon-hover" onClick={() => adjustScore(i, -1)}>−</Button>
+              <Button size="sm" variant="outline" className="h-10 w-10 text-xl border-primary/60 bg-black neon-hover" onClick={() => adjustScore(i, 1)}>+</Button>
+            </div>
+            <div className="flex gap-1.5">
               {Array.from({ length: 3 }).map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => idx < team.tokens && useToken(i)}
                   disabled={idx >= team.tokens}
-                  className={`h-9 w-9 rounded-full flex items-center justify-center transition ${
-                    idx < team.tokens ? "bg-primary text-primary-foreground neon-glow" : "bg-muted opacity-30"
+                  className={`h-9 w-9 rounded-full flex items-center justify-center transition-all duration-200 ${
+                    idx < team.tokens
+                      ? "bg-primary text-primary-foreground neon-glow hover:scale-110 hover:neon-glow-strong"
+                      : "bg-muted opacity-30"
                   }`}
                   aria-label="Comodín"
                 >
