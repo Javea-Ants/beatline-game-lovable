@@ -1,23 +1,31 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { loginWithSpotify, handleRedirect, getAccessToken, playTrack, pausePlayback, resumePlayback, seekTo, logout, fetchTrack } from "@/lib/spotify";
+import { Input } from "@/components/ui/input";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { loginWithSpotify, handleRedirect, getAccessToken, playTrack, pausePlayback, resumePlayback, seekTo, logout, fetchTrack, extractPlaylistId, fetchPlaylistSongs } from "@/lib/spotify";
 import { SONGS, type Song } from "@/lib/songs";
-import { Play, Pause, SkipForward, SkipBack, Eye, LogOut, Coins, Copy, Disc3 } from "lucide-react";
+import { Play, Pause, SkipForward, SkipBack, Eye, LogOut, Coins, Copy, Disc3, Settings } from "lucide-react";
 import { toast } from "sonner";
 
 type Phase = "idle" | "playing" | "revealed";
 
 interface Team { name: string; score: number; tokens: number; }
 
+const DEFAULT_PLAYLIST_NAME = "Temazos de varias décadas";
+
 const Index = () => {
-  const PLAYLIST_NAME = "Temazos de varias décadas";
   const [authed, setAuthed] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState<Phase>("idle");
   const [song, setSong] = useState<Song | null>(null);
   const [albumArt, setAlbumArt] = useState<string | null>(null);
+  const [playlistName, setPlaylistName] = useState(DEFAULT_PLAYLIST_NAME);
+  const [songs, setSongs] = useState<Song[]>(SONGS);
+  const [playlistInput, setPlaylistInput] = useState("");
+  const [loadingPlaylist, setLoadingPlaylist] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [teams, setTeams] = useState<Team[]>([
     { name: "Equipo 1", score: 0, tokens: 3 },
     { name: "Equipo 2", score: 0, tokens: 3 },
@@ -32,7 +40,33 @@ const Index = () => {
     })();
   }, []);
 
-  const pickRandom = () => SONGS[Math.floor(Math.random() * SONGS.length)];
+  const pickRandom = () => songs[Math.floor(Math.random() * songs.length)];
+
+  const handleLoadPlaylist = async () => {
+    const id = extractPlaylistId(playlistInput);
+    if (!id) {
+      toast.error("Enlace o URI no válido");
+      return;
+    }
+    setLoadingPlaylist(true);
+    try {
+      const result = await fetchPlaylistSongs(id);
+      const valid = result.songs.filter((s) => s.year > 0);
+      if (valid.length === 0) {
+        toast.error("No se encontraron canciones válidas");
+        return;
+      }
+      setSongs(valid);
+      setPlaylistName(result.name);
+      setPlaylistInput("");
+      setSettingsOpen(false);
+      toast.success(`Cargadas ${valid.length} canciones`);
+    } catch (e: any) {
+      toast.error(e.message || "Error al cargar la playlist");
+    } finally {
+      setLoadingPlaylist(false);
+    }
+  };
 
   const handlePlay = async () => {
     try {
@@ -135,15 +169,50 @@ const Index = () => {
   return (
     <main className="min-h-screen flex flex-col p-4 gap-4">
       <header className="flex items-center justify-between">
-        <div className="flex flex-col">
+        <div className="flex flex-col min-w-0">
           <h1 className="text-2xl font-black neon-text text-primary">HITSTER</h1>
-          <span className="text-xs text-muted-foreground uppercase tracking-wider">
-            Playlist: {PLAYLIST_NAME}
+          <span className="text-xs text-muted-foreground uppercase tracking-wider truncate max-w-[200px]">
+            Playlist: {playlistName}
           </span>
         </div>
-        <Button variant="ghost" size="icon" onClick={() => { logout(); setAuthed(false); }}>
-          <LogOut className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label="Ajustes">
+                <Settings className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="bg-background border-primary/40">
+              <SheetHeader>
+                <SheetTitle className="text-primary neon-text">Cargar playlist</SheetTitle>
+              </SheetHeader>
+              <div className="flex flex-col gap-4 mt-6">
+                <Input
+                  value={playlistInput}
+                  onChange={(e) => setPlaylistInput(e.target.value)}
+                  placeholder="Pega el enlace o URI de tu playlist de Spotify"
+                  className="h-14 text-base border-primary/60"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Nota: Los años de listas personalizadas pueden corresponder a remasters.
+                </p>
+                <Button
+                  onClick={handleLoadPlaylist}
+                  disabled={loadingPlaylist || !playlistInput.trim()}
+                  className="h-14 text-lg rounded-2xl neon-glow bg-primary hover:bg-primary/90"
+                >
+                  {loadingPlaylist ? "Cargando..." : "Cargar Lista"}
+                </Button>
+                <div className="text-xs text-muted-foreground border-t border-primary/20 pt-3 mt-2">
+                  Playlist actual: <span className="text-primary">{playlistName}</span> ({songs.length} canciones)
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+          <Button variant="ghost" size="icon" onClick={() => { logout(); setAuthed(false); }} aria-label="Cerrar sesión">
+            <LogOut className="h-5 w-5" />
+          </Button>
+        </div>
       </header>
 
       {/* Marcador */}
