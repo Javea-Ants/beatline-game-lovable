@@ -40,7 +40,33 @@ const Index = () => {
     })();
   }, []);
 
-  const pickRandom = () => SONGS[Math.floor(Math.random() * SONGS.length)];
+  const pickRandom = () => songs[Math.floor(Math.random() * songs.length)];
+
+  const handleLoadPlaylist = async () => {
+    const id = extractPlaylistId(playlistInput);
+    if (!id) {
+      toast.error("Enlace o URI no válido");
+      return;
+    }
+    setLoadingPlaylist(true);
+    try {
+      const result = await fetchPlaylistSongs(id);
+      const valid = result.songs.filter((s) => s.year > 0);
+      if (valid.length === 0) {
+        toast.error("No se encontraron canciones válidas");
+        return;
+      }
+      setSongs(valid);
+      setPlaylistName(result.name);
+      setPlaylistInput("");
+      setSettingsOpen(false);
+      toast.success(`Cargadas ${valid.length} canciones`);
+    } catch (e: any) {
+      toast.error(e.message || "Error al cargar la playlist");
+    } finally {
+      setLoadingPlaylist(false);
+    }
+  };
 
   const handlePlay = async () => {
     try {
