@@ -32,10 +32,29 @@
 @layer base {
   * { @apply border-border; }
   html, body, #root { @apply bg-background text-foreground; min-height: 100vh; }
-  body { font-family: system-ui, -apple-system, sans-serif; }
+  body { font-family: 'Poppins', system-ui, -apple-system, sans-serif; letter-spacing: -0.01em; }
 }
 
 @layer utilities {
   .neon-glow { box-shadow: var(--neon-glow); }
-  .neon-text { text-shadow: 0 0 12px hsl(var(--neon) / 0.8), 0 0 24px hsl(var(--neon) / 0.5); }
+  .neon-glow-strong {
+    box-shadow:
+      0 0 20px hsl(var(--neon) / 0.8),
+      0 0 40px hsl(var(--neon) / 0.6),
+      0 0 80px hsl(var(--neon) / 0.4);
+  }
+  .neon-text {
+    text-shadow: 0 0 12px hsl(var(--neon) / 0.8), 0 0 24px hsl(var(--neon) / 0.5);
+  }
+  .neon-hover {
+    transition: box-shadow 0.25s ease, transform 0.2s ease, filter 0.25s ease;
+  }
+  .neon-hover:hover, .neon-hover:active {
+    box-shadow:
+      0 0 24px hsl(var(--neon) / 0.9),
+      0 0 48px hsl(var(--neon) / 0.6),
+      0 0 96px hsl(var(--neon) / 0.4);
+    filter: drop-shadow(0 0 12px hsl(var(--neon) / 0.7));
+    transform: translateY(-1px);
+  }
 }

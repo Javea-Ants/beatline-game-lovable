@@ -218,21 +218,28 @@ const Index = () => {
       {/* Marcador */}
       <div className="grid grid-cols-2 gap-3">
         {teams.map((team, i) => (
-          <Card key={i} className="p-3 flex flex-col items-center gap-2 border-primary/40">
-            <div className="text-sm font-semibold text-muted-foreground">{team.name}</div>
-            <div className="text-4xl font-black neon-text text-primary">{team.score}</div>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="h-10 w-10 text-xl" onClick={() => adjustScore(i, -1)}>−</Button>
-              <Button size="sm" variant="outline" className="h-10 w-10 text-xl" onClick={() => adjustScore(i, 1)}>+</Button>
+          <Card key={i} className="p-3 flex flex-col items-center gap-3 border-primary/40 bg-card/60 backdrop-blur neon-hover">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{team.name}</div>
+            <div
+              key={team.score}
+              className="relative h-20 w-20 rounded-full flex items-center justify-center bg-black border-2 border-primary neon-glow-strong animate-scale-in"
+            >
+              <span className="text-3xl font-black text-primary neon-text tabular-nums">{team.score}</span>
             </div>
-            <div className="flex gap-1 mt-1">
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" className="h-10 w-10 text-xl border-primary/60 bg-black neon-hover" onClick={() => adjustScore(i, -1)}>−</Button>
+              <Button size="sm" variant="outline" className="h-10 w-10 text-xl border-primary/60 bg-black neon-hover" onClick={() => adjustScore(i, 1)}>+</Button>
+            </div>
+            <div className="flex gap-1.5">
               {Array.from({ length: 3 }).map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => idx < team.tokens && useToken(i)}
                   disabled={idx >= team.tokens}
-                  className={`h-9 w-9 rounded-full flex items-center justify-center transition ${
-                    idx < team.tokens ? "bg-primary text-primary-foreground neon-glow" : "bg-muted opacity-30"
+                  className={`h-9 w-9 rounded-full flex items-center justify-center transition-all duration-200 ${
+                    idx < team.tokens
+                      ? "bg-primary text-primary-foreground neon-glow hover:scale-110 hover:neon-glow-strong"
+                      : "bg-muted opacity-30"
                   }`}
                   aria-label="Comodín"
                 >
@@ -248,30 +255,31 @@ const Index = () => {
       <section className="flex-1 flex flex-col items-center justify-center gap-6">
         {phase === "idle" && (
           <button
+            key="idle"
             onClick={handlePlay}
-            className="h-64 w-64 rounded-full bg-primary text-primary-foreground neon-glow flex flex-col items-center justify-center text-4xl font-black active:scale-95 transition"
+            className="h-64 w-64 rounded-full bg-primary text-primary-foreground neon-glow-strong flex flex-col items-center justify-center text-4xl font-black active:scale-95 hover:scale-105 transition-transform duration-300 animate-scale-in animate-neon-pulse"
           >
             <Play className="h-24 w-24 mb-2 fill-current" />
             PLAY
           </button>
         )}
 
-        {phase === "playing" && (
-          <div className="w-full flex flex-col gap-4">
-            <div className="text-center text-lg text-muted-foreground animate-pulse">
+        {phase === "playing" && song && (
+          <div key={song.uri} className="w-full flex flex-col gap-4 animate-fade-in">
+            <div className="text-center text-lg text-muted-foreground animate-pulse tracking-widest uppercase">
               {isPaused ? "En pausa" : "Sonando..."}
             </div>
-            <Button onClick={handleReveal} className="h-24 text-2xl rounded-2xl neon-glow bg-primary hover:bg-primary/90">
+            <Button onClick={handleReveal} className="h-24 text-2xl rounded-2xl neon-glow-strong bg-primary hover:bg-primary/90 neon-hover font-black tracking-wide">
               <Eye className="h-8 w-8 mr-3" /> REVELAR INFO
             </Button>
             <div className="grid grid-cols-3 gap-3">
-              <Button onClick={handleRestart} variant="outline" className="h-20 rounded-2xl border-2 border-primary bg-black hover:bg-primary/20 neon-glow">
+              <Button onClick={handleRestart} variant="outline" className="h-20 rounded-2xl border-2 border-primary bg-black hover:bg-primary/20 neon-hover">
                 <SkipBack className="!h-9 !w-9 fill-current" />
               </Button>
-              <Button onClick={handleSkip} variant="outline" className="h-20 rounded-2xl border-2 border-primary bg-black hover:bg-primary/20 neon-glow">
+              <Button onClick={handleSkip} variant="outline" className="h-20 rounded-2xl border-2 border-primary bg-black hover:bg-primary/20 neon-hover">
                 <SkipForward className="!h-9 !w-9 fill-current" />
               </Button>
-              <Button onClick={handleTogglePause} variant="outline" className="h-20 rounded-2xl border-2 border-primary bg-black hover:bg-primary/20 neon-glow">
+              <Button onClick={handleTogglePause} variant="outline" className="h-20 rounded-2xl border-2 border-primary bg-black hover:bg-primary/20 neon-hover">
                 {isPaused ? <Play className="!h-9 !w-9 fill-current" /> : <Pause className="!h-9 !w-9 fill-current" />}
               </Button>
             </div>
@@ -281,9 +289,9 @@ const Index = () => {
       </section>
 
       {phase === "revealed" && song && (
-        <div className="fixed inset-0 z-50 bg-black flex flex-col p-6 gap-6 overflow-y-auto">
+        <div key={`reveal-${song.uri}`} className="fixed inset-0 z-50 bg-black flex flex-col p-6 gap-6 overflow-y-auto animate-fade-in">
           <div className="flex-1 flex flex-col items-center justify-center gap-6">
-            <div className="w-64 h-64 sm:w-80 sm:h-80 rounded-2xl overflow-hidden border-2 border-primary neon-glow bg-secondary flex items-center justify-center">
+            <div className="w-64 h-64 sm:w-80 sm:h-80 rounded-2xl overflow-hidden border-2 border-primary neon-glow-strong bg-secondary flex items-center justify-center animate-scale-in">
               {albumArt ? (
                 <img src={albumArt} alt={`Carátula de ${song.title} de ${song.artist}`} className="w-full h-full object-cover" />
               ) : (
@@ -291,19 +299,19 @@ const Index = () => {
               )}
             </div>
             <div
-              className="text-[7rem] sm:text-[10rem] font-black text-primary tracking-tighter leading-none"
+              className="text-[7rem] sm:text-[10rem] font-black text-primary tracking-tighter leading-none animate-scale-in"
               style={{ textShadow: "0 0 20px hsl(var(--neon)), 0 0 40px hsl(var(--neon)), 0 0 80px hsl(var(--neon) / 0.7)" }}
             >
               {song.year}
             </div>
-            <div className="text-center">
+            <div className="text-center animate-fade-in">
               <div className="text-3xl font-bold">{song.artist}</div>
               <div className="text-xl text-muted-foreground mt-1">{song.title}</div>
             </div>
           </div>
           <Button
             onClick={handleNext}
-            className="h-24 w-full text-2xl rounded-2xl neon-glow bg-primary hover:bg-primary/90 font-black"
+            className="h-24 w-full text-2xl rounded-2xl neon-glow-strong bg-primary hover:bg-primary/90 font-black tracking-wide neon-hover"
           >
             SIGUIENTE CANCIÓN
           </Button>
