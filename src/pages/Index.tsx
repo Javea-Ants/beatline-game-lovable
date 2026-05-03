@@ -209,23 +209,40 @@ const Index = () => {
           </div>
         )}
 
-        {phase === "revealed" && song && (
-          <div className="w-full flex flex-col items-center gap-6">
-            <div className="text-9xl font-black neon-text text-primary tracking-tighter">
+      </section>
+
+      {phase === "revealed" && song && (
+        <div className="fixed inset-0 z-50 bg-black flex flex-col p-6 gap-6 overflow-y-auto">
+          <div className="flex-1 flex flex-col items-center justify-center gap-6">
+            <div className="w-64 h-64 sm:w-80 sm:h-80 rounded-2xl overflow-hidden border-2 border-primary neon-glow bg-secondary flex items-center justify-center">
+              {albumArt ? (
+                <img src={albumArt} alt={`Carátula de ${song.title} de ${song.artist}`} className="w-full h-full object-cover" />
+              ) : (
+                <Disc3 className="h-24 w-24 text-primary animate-spin" />
+              )}
+            </div>
+            <div
+              className="text-[7rem] sm:text-[10rem] font-black text-primary tracking-tighter leading-none"
+              style={{ textShadow: "0 0 20px hsl(var(--neon)), 0 0 40px hsl(var(--neon)), 0 0 80px hsl(var(--neon) / 0.7)" }}
+            >
               {song.year}
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold">{song.artist}</div>
               <div className="text-xl text-muted-foreground mt-1">{song.title}</div>
             </div>
-            <Button onClick={handleNext} className="h-20 w-full text-2xl rounded-2xl neon-glow bg-primary hover:bg-primary/90">
-              SIGUIENTE
-            </Button>
           </div>
-        )}
-      </section>
+          <Button
+            onClick={handleNext}
+            className="h-24 w-full text-2xl rounded-2xl neon-glow bg-primary hover:bg-primary/90 font-black"
+          >
+            SIGUIENTE CANCIÓN
+          </Button>
+        </div>
+      )}
     </main>
   );
 };
 
 export default Index;
+
