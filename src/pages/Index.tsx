@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { loginWithSpotify, handleRedirect, getAccessToken, playTrack, pausePlayback, logout } from "@/lib/spotify";
+import { loginWithSpotify, handleRedirect, getAccessToken, playTrack, pausePlayback, resumePlayback, seekBy, logout } from "@/lib/spotify";
 import { SONGS, type Song } from "@/lib/songs";
-import { Play, SkipForward, Eye, LogOut, Coins, Copy } from "lucide-react";
+import { Play, Pause, SkipForward, Eye, LogOut, Coins, Copy, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 type Phase = "idle" | "playing" | "revealed";
