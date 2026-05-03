@@ -196,3 +196,41 @@ export async function fetchTrack(uri: string): Promise<{ albumArt: string | null
     return { albumArt: null };
   }
 }
+
+export function extractPlaylistId(input: string): string | null {
+  const trimmed = input.trim();
+  let m = trimmed.match(/playlist[/:]([a-zA-Z0-9]+)/);
+  if (m) return m[1];
+  if (/^[a-zA-Z0-9]{22}$/.test(trimmed)) return trimmed;
+  return null;
+}
+
+export interface PlaylistResult {
+  name: string;
+  songs: { title: string; artist: string; year: number; uri: string }[];
+}
+
+export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistResult> {
+  const token = await getAccessToken();
+  if (!token) throw new Error("No token");
+  const metaRes = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}?fields=name`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!metaRes.ok) throw new Error("Playlist no encontrada");
+  const meta = await metaRes.json();
+  const tracksRes = await fetch(
+    `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50&fields=items(track(uri,name,artists(name),album(release_date)))`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  const tracksData = await tracksRes.json();
+  const songs = (tracksData.items || [])
+    .map((it: any) => it.track)
+    .filter((t: any) => t && t.uri && t.uri.startsWith("spotify:track:"))
+    .map((t: any) => ({
+      title: t.name,
+      artist: (t.artists || []).map((a: any) => a.name).join(", "),
+      year: parseInt((t.album?.release_date || "0").slice(0, 4), 10) || 0,
+      uri: t.uri,
+    }));
+  return { name: meta.name || "Playlist personalizada", songs };
+}
