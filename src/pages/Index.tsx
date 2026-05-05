@@ -14,13 +14,14 @@ interface Team { name: string; score: number; tokens: number; }
 
 const DEFAULT_PLAYLIST_NAME = "Temazos de varias décadas";
 
+interface CurrentSong extends Song { albumArt: string | null; }
+
 const Index = () => {
   const [authed, setAuthed] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState<Phase>("idle");
-  const [song, setSong] = useState<Song | null>(null);
-  const [albumArt, setAlbumArt] = useState<string | null>(null);
+  const [currentSong, setCurrentSong] = useState<CurrentSong | null>(null);
   const [playlistName, setPlaylistName] = useState(DEFAULT_PLAYLIST_NAME);
   const [songs, setSongs] = useState<Song[]>(SONGS);
   const [playlistInput, setPlaylistInput] = useState("");
@@ -68,24 +69,32 @@ const Index = () => {
     }
   };
 
-  const handlePlay = async () => {
+  const loadAndPlay = async (s: Song & { albumArt?: string | null }) => {
     try {
-      const s = pickRandom();
-      setSong(s);
-      setAlbumArt(null);
+      const initialArt = (s as any).albumArt ?? null;
+      setCurrentSong({ ...s, albumArt: initialArt });
       setPhase("playing");
       setIsPaused(false);
       await playTrack(s.uri);
-      fetchTrack(s.uri).then((d) => setAlbumArt(d.albumArt));
+      if (!initialArt) {
+        const { albumArt } = await fetchTrack(s.uri);
+        // Only apply if still the same song
+        setCurrentSong((prev) => (prev && prev.uri === s.uri ? { ...prev, albumArt } : prev));
+      }
     } catch (e: any) {
       toast.error("Error al reproducir. Necesitas Spotify Premium.");
       console.error(e);
     }
   };
 
+  const handlePlay = async () => {
+    await loadAndPlay(pickRandom());
+  };
+
   const handleSkip = async () => {
     await pausePlayback();
-    handlePlay();
+    setCurrentSong(null);
+    await loadAndPlay(pickRandom());
   };
 
   const handleTogglePause = async () => {
@@ -112,10 +121,9 @@ const Index = () => {
 
   const handleNext = async () => {
     await pausePlayback();
+    setCurrentSong(null);
     setPhase("idle");
-    setSong(null);
-    setAlbumArt(null);
-    await handlePlay();
+    await loadAndPlay(pickRandom());
   };
 
   const adjustScore = (i: number, delta: number) => {
