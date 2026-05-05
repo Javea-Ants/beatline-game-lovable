@@ -137,14 +137,48 @@ export async function initPlayer(): Promise<string> {
   });
 }
 
-export async function playTrack(uri: string) {
+export function isValidTrackUri(uri: string | undefined | null): boolean {
+  if (!uri) return false;
+  return /^spotify:track:[a-zA-Z0-9]{22}$/.test(uri);
+}
+
+export async function reconnectPlayer(): Promise<string | null> {
+  try {
+    if (player) {
+      try { await player.disconnect(); } catch {}
+    }
+    player = null;
+    deviceId = null;
+    const id = await initPlayer();
+    return id;
+  } catch (e) {
+    console.error("Reconnect failed", e);
+    return null;
+  }
+}
+
+export async function playTrack(uri: string): Promise<{ ok: boolean; status?: number; reason?: string }> {
+  if (!isValidTrackUri(uri)) return { ok: false, reason: "invalid_uri" };
   const token = await getAccessToken();
-  const id = await initPlayer();
-  await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${id}`, {
-    method: "PUT",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ uris: [uri] }),
-  });
+  let id = await initPlayer();
+  const doPlay = async (devId: string) =>
+    fetch(`https://api.spotify.com/v1/me/player/play?device_id=${devId}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ uris: [uri] }),
+    });
+  let res = await doPlay(id);
+  if (res.status === 404 || res.status === 502) {
+    // Device lost — try reconnect once
+    const newId = await reconnectPlayer();
+    if (newId) res = await doPlay(newId);
+  }
+  if (!res.ok) {
+    let reason = `http_${res.status}`;
+    try { const j = await res.json(); reason = j?.error?.reason || j?.error?.message || reason; } catch {}
+    return { ok: false, status: res.status, reason };
+  }
+  return { ok: true };
 }
 
 export async function pausePlayback() {
@@ -185,13 +219,25 @@ export async function fetchTrack(uri: string): Promise<{ albumArt: string | null
   const id = uri.split(":").pop();
   const token = await getAccessToken();
   if (!token || !id) return { albumArt: null };
-  try {
+  const tryFetch = async () => {
     const res = await fetch(`https://api.spotify.com/v1/tracks/${id}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
+    if (!res.ok) return null;
     const data = await res.json();
-    const img = data?.album?.images?.[0]?.url || null;
-    return { albumArt: img };
+    const images: { url: string; width: number }[] = data?.album?.images || [];
+    if (!images.length) return null;
+    // Pick largest by width
+    const best = [...images].sort((a, b) => (b.width || 0) - (a.width || 0))[0];
+    return best?.url || null;
+  };
+  try {
+    let url = await tryFetch();
+    if (!url) {
+      await new Promise((r) => setTimeout(r, 400));
+      url = await tryFetch();
+    }
+    return { albumArt: url };
   } catch {
     return { albumArt: null };
   }

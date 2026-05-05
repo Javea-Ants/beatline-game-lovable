@@ -69,21 +69,37 @@ const Index = () => {
     }
   };
 
-  const loadAndPlay = async (s: Song & { albumArt?: string | null }) => {
+  const loadAndPlay = async (s: Song & { albumArt?: string | null }, attemptsLeft = 5) => {
+    if (attemptsLeft <= 0) {
+      toast.error("No se pudo reproducir ninguna canción");
+      return;
+    }
+    if (!s || !s.uri || !/^spotify:track:[a-zA-Z0-9]{22}$/.test(s.uri)) {
+      toast.warning("Canción no disponible, saltando...");
+      await loadAndPlay(pickRandom(), attemptsLeft - 1);
+      return;
+    }
     try {
       const initialArt = (s as any).albumArt ?? null;
       setCurrentSong({ ...s, albumArt: initialArt });
       setPhase("playing");
       setIsPaused(false);
-      await playTrack(s.uri);
+      const result = await playTrack(s.uri);
+      if (!result.ok) {
+        toast.warning("Canción no disponible, saltando...");
+        setCurrentSong(null);
+        await loadAndPlay(pickRandom(), attemptsLeft - 1);
+        return;
+      }
       if (!initialArt) {
         const { albumArt } = await fetchTrack(s.uri);
-        // Only apply if still the same song
         setCurrentSong((prev) => (prev && prev.uri === s.uri ? { ...prev, albumArt } : prev));
       }
     } catch (e: any) {
-      toast.error("Error al reproducir. Necesitas Spotify Premium.");
       console.error(e);
+      toast.warning("Canción no disponible, saltando...");
+      setCurrentSong(null);
+      await loadAndPlay(pickRandom(), attemptsLeft - 1);
     }
   };
 
