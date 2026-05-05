@@ -14,13 +14,14 @@ interface Team { name: string; score: number; tokens: number; }
 
 const DEFAULT_PLAYLIST_NAME = "Temazos de varias décadas";
 
+interface CurrentSong extends Song { albumArt: string | null; }
+
 const Index = () => {
   const [authed, setAuthed] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState<Phase>("idle");
-  const [song, setSong] = useState<Song | null>(null);
-  const [albumArt, setAlbumArt] = useState<string | null>(null);
+  const [currentSong, setCurrentSong] = useState<CurrentSong | null>(null);
   const [playlistName, setPlaylistName] = useState(DEFAULT_PLAYLIST_NAME);
   const [songs, setSongs] = useState<Song[]>(SONGS);
   const [playlistInput, setPlaylistInput] = useState("");
@@ -68,24 +69,32 @@ const Index = () => {
     }
   };
 
-  const handlePlay = async () => {
+  const loadAndPlay = async (s: Song & { albumArt?: string | null }) => {
     try {
-      const s = pickRandom();
-      setSong(s);
-      setAlbumArt(null);
+      const initialArt = (s as any).albumArt ?? null;
+      setCurrentSong({ ...s, albumArt: initialArt });
       setPhase("playing");
       setIsPaused(false);
       await playTrack(s.uri);
-      fetchTrack(s.uri).then((d) => setAlbumArt(d.albumArt));
+      if (!initialArt) {
+        const { albumArt } = await fetchTrack(s.uri);
+        // Only apply if still the same song
+        setCurrentSong((prev) => (prev && prev.uri === s.uri ? { ...prev, albumArt } : prev));
+      }
     } catch (e: any) {
       toast.error("Error al reproducir. Necesitas Spotify Premium.");
       console.error(e);
     }
   };
 
+  const handlePlay = async () => {
+    await loadAndPlay(pickRandom());
+  };
+
   const handleSkip = async () => {
     await pausePlayback();
-    handlePlay();
+    setCurrentSong(null);
+    await loadAndPlay(pickRandom());
   };
 
   const handleTogglePause = async () => {
@@ -112,10 +121,9 @@ const Index = () => {
 
   const handleNext = async () => {
     await pausePlayback();
+    setCurrentSong(null);
     setPhase("idle");
-    setSong(null);
-    setAlbumArt(null);
-    await handlePlay();
+    await loadAndPlay(pickRandom());
   };
 
   const adjustScore = (i: number, delta: number) => {
@@ -263,8 +271,8 @@ const Index = () => {
           </button>
         )}
 
-        {phase === "playing" && song && (
-          <div key={song.uri} className="w-full flex flex-col gap-4 animate-fade-in">
+        {phase === "playing" && currentSong && (
+          <div key={currentSong.uri} className="w-full flex flex-col gap-4 animate-fade-in">
             <div className="text-center text-lg text-muted-foreground animate-pulse tracking-widest uppercase">
               {isPaused ? "En pausa" : "Sonando..."}
             </div>
@@ -287,8 +295,8 @@ const Index = () => {
 
       </section>
 
-      {phase === "revealed" && song && (
-        <div key={`reveal-${song.uri}`} className="fixed inset-0 z-50 bg-black flex flex-col p-6 gap-6 overflow-y-auto animate-fade-in">
+      {phase === "revealed" && currentSong && (
+        <div key={`reveal-${currentSong.uri}`} className="fixed inset-0 z-50 bg-black flex flex-col p-6 gap-6 overflow-y-auto animate-fade-in">
           <div className="flex justify-end">
             <Button
               onClick={handleTogglePause}
@@ -302,8 +310,8 @@ const Index = () => {
           </div>
           <div className="flex-1 flex flex-col items-center justify-center gap-6">
             <div className="w-64 h-64 sm:w-80 sm:h-80 rounded-2xl overflow-hidden border-2 border-primary neon-glow-strong bg-secondary flex items-center justify-center animate-scale-in">
-              {albumArt ? (
-                <img src={albumArt} alt={`Carátula de ${song.title} de ${song.artist}`} className="w-full h-full object-cover" />
+              {currentSong.albumArt ? (
+                <img src={currentSong.albumArt} alt={`Carátula de ${currentSong.title} de ${currentSong.artist}`} className="w-full h-full object-cover" />
               ) : (
                 <Disc3 className="h-24 w-24 text-primary animate-spin" />
               )}
@@ -312,11 +320,11 @@ const Index = () => {
               className="text-[7rem] sm:text-[10rem] font-black text-white leading-none animate-scale-in"
               style={{ letterSpacing: "0.04em" }}
             >
-              {song.year}
+              {currentSong.year}
             </div>
             <div className="text-center animate-fade-in">
-              <div className="text-3xl font-bold">{song.artist}</div>
-              <div className="text-xl text-muted-foreground mt-1">{song.title}</div>
+              <div className="text-3xl font-bold">{currentSong.artist}</div>
+              <div className="text-xl text-muted-foreground mt-1">{currentSong.title}</div>
             </div>
           </div>
           <Button
