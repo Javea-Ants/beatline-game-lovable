@@ -289,6 +289,17 @@ const Index = () => {
 
       {phase === "revealed" && song && (
         <div key={`reveal-${song.uri}`} className="fixed inset-0 z-50 bg-black flex flex-col p-6 gap-6 overflow-y-auto animate-fade-in">
+          <div className="flex justify-end">
+            <Button
+              onClick={handleTogglePause}
+              variant="outline"
+              size="icon"
+              className="h-14 w-14 rounded-full border-2 border-primary bg-black neon-hover"
+              aria-label={isPaused ? "Reanudar" : "Pausar"}
+            >
+              {isPaused ? <Play className="!h-7 !w-7 fill-current" /> : <Pause className="!h-7 !w-7 fill-current" />}
+            </Button>
+          </div>
           <div className="flex-1 flex flex-col items-center justify-center gap-6">
             <div className="w-64 h-64 sm:w-80 sm:h-80 rounded-2xl overflow-hidden border-2 border-primary neon-glow-strong bg-secondary flex items-center justify-center animate-scale-in">
               {albumArt ? (
@@ -297,7 +308,10 @@ const Index = () => {
                 <Disc3 className="h-24 w-24 text-primary animate-spin" />
               )}
             </div>
-            <div className="text-[7rem] sm:text-[10rem] font-black text-white tracking-tighter leading-none animate-scale-in">
+            <div
+              className="text-[7rem] sm:text-[10rem] font-black text-white leading-none animate-scale-in"
+              style={{ letterSpacing: "0.04em" }}
+            >
               {song.year}
             </div>
             <div className="text-center animate-fade-in">
