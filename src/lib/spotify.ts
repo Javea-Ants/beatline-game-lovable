@@ -208,7 +208,7 @@ export function extractPlaylistId(input: string): string | null {
 
 export interface PlaylistResult {
   name: string;
-  songs: { title: string; artist: string; year: number; uri: string }[];
+  songs: { id: string; title: string; artist: string; year: number; uri: string; albumArt: string | null }[];
 }
 
 export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistResult> {
