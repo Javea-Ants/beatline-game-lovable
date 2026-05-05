@@ -106,13 +106,12 @@ const Index = () => {
     }
   };
 
-  const handleReveal = async () => {
-    await pausePlayback();
-    setIsPaused(true);
+  const handleReveal = () => {
     setPhase("revealed");
   };
 
   const handleNext = async () => {
+    await pausePlayback();
     setPhase("idle");
     setSong(null);
     setAlbumArt(null);
@@ -298,10 +297,7 @@ const Index = () => {
                 <Disc3 className="h-24 w-24 text-primary animate-spin" />
               )}
             </div>
-            <div
-              className="text-[7rem] sm:text-[10rem] font-black text-primary tracking-tighter leading-none animate-scale-in"
-              style={{ textShadow: "0 0 20px hsl(var(--neon)), 0 0 40px hsl(var(--neon)), 0 0 80px hsl(var(--neon) / 0.7)" }}
-            >
+            <div className="text-[7rem] sm:text-[10rem] font-black text-white tracking-tighter leading-none animate-scale-in">
               {song.year}
             </div>
             <div className="text-center animate-fade-in">
@@ -311,7 +307,8 @@ const Index = () => {
           </div>
           <Button
             onClick={handleNext}
-            className="h-24 w-full text-2xl rounded-2xl neon-glow-strong bg-primary hover:bg-primary/90 font-black tracking-wide neon-hover"
+            variant="outline"
+            className="h-20 w-full text-lg rounded-2xl bg-secondary/60 hover:bg-secondary text-foreground/80 border border-primary/30 font-semibold tracking-wide"
           >
             SIGUIENTE CANCIÓN
           </Button>
