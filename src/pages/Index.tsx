@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { loginWithSpotify, handleRedirect, getAccessToken, playTrack, pausePlayback, resumePlayback, seekTo, logout, fetchTrack, extractPlaylistId, fetchPlaylistSongs } from "@/lib/spotify";
 import { SONGS, type Song } from "@/lib/songs";
-import { Play, Pause, SkipForward, SkipBack, Eye, LogOut, Coins, Copy, Disc3, Settings } from "lucide-react";
+import { Play, Pause, SkipForward, SkipBack, Eye, LogOut, Copy, Disc3, Settings } from "lucide-react";
 import { toast } from "sonner";
 
 type Phase = "idle" | "playing" | "revealed";
@@ -318,9 +318,21 @@ const Index = () => {
             >
               {currentSong.year}
             </div>
-            <div className="text-center animate-fade-in">
-              <div className="text-3xl font-bold">{currentSong.artist}</div>
-              <div className="text-xl text-muted-foreground mt-1">{currentSong.title}</div>
+            <div className="text-center animate-fade-in max-w-full px-4">
+              {(() => {
+                const parts = currentSong.artist.split(/,\s*|\s+&\s+|\s+feat\.?\s+|\s+ft\.?\s+/i).filter(Boolean);
+                const main = parts[0] || currentSong.artist;
+                const rest = parts.slice(1);
+                return (
+                  <>
+                    <div className="text-4xl font-black text-primary neon-text leading-tight">{main}</div>
+                    {rest.length > 0 && (
+                      <div className="text-lg font-medium text-muted-foreground mt-1">feat. {rest.join(", ")}</div>
+                    )}
+                  </>
+                );
+              })()}
+              <div className="text-xl text-foreground/80 mt-2 italic">{currentSong.title}</div>
             </div>
           </div>
           <Button
