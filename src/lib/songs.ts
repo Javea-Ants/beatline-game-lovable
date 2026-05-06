@@ -23,7 +23,7 @@ export const SONGS: Song[] = [
   { title: "Get Lucky (feat. Pharrell Williams & Nile Rodgers)", artist: "Daft Punk, Pharrell Williams, Nile Rodgers", year: 2013, uri: "spotify:track:69kOkLUCkxIZYexIgSG8rq" },
   { title: "Happy", artist: "Pharrell Williams", year: 2013, uri: "spotify:track:60nZcImufyMA1MKQY3dcCH" },
   { title: "Uptown Funk (feat. Bruno Mars)", artist: "Mark Ronson, Bruno Mars", year: 2014, uri: "spotify:track:32OlwWuMpZ6b0aN2RZOeMS" },
-  { title: "Despacito", artist: "Luis Fonsi", year: 2017, uri: "spotify:track:6habFhsOp2NvshLv26DqMb" },
+  { title: "Despacito", artist: "Luis Fonsi, Daddy Yankee", year: 2017, uri: "spotify:track:6habFhsOp2NvshLv26DqMb" },
   { title: "Shape of You", artist: "Ed Sheeran", year: 2017, uri: "spotify:track:7qiZfU4dY1lWllzX7mPBI3" },
   { title: "Blinding Lights", artist: "The Weeknd", year: 2019, uri: "spotify:track:0VjIjW4GlUZAMYd2vXMi3b" },
   { title: "As It Was", artist: "Harry Styles", year: 2022, uri: "spotify:track:4Dvkj6JhhA12EX05fT7y2e" },
