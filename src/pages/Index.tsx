@@ -5,12 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { loginWithSpotify, handleRedirect, getAccessToken, playTrack, pausePlayback, resumePlayback, seekTo, logout, fetchTrack, extractPlaylistId, fetchPlaylistSongs } from "@/lib/spotify";
 import { SONGS, type Song } from "@/lib/songs";
-import { Play, Pause, SkipForward, SkipBack, Eye, LogOut, Coins, Copy, Disc3, Settings } from "lucide-react";
+import { Play, Pause, SkipForward, SkipBack, Eye, LogOut, Copy, Disc3, Settings } from "lucide-react";
 import { toast } from "sonner";
 
 type Phase = "idle" | "playing" | "revealed";
 
-interface Team { name: string; score: number; tokens: number; }
+interface Team { name: string; score: number; }
 
 const DEFAULT_PLAYLIST_NAME = "Temazos de varias décadas";
 
@@ -28,8 +28,8 @@ const Index = () => {
   const [loadingPlaylist, setLoadingPlaylist] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [teams, setTeams] = useState<Team[]>([
-    { name: "Equipo 1", score: 0, tokens: 3 },
-    { name: "Equipo 2", score: 0, tokens: 3 },
+    { name: "Equipo 1", score: 0 },
+    { name: "Equipo 2", score: 0 },
   ]);
 
   useEffect(() => {
@@ -146,9 +146,6 @@ const Index = () => {
     setTeams((t) => t.map((team, idx) => idx === i ? { ...team, score: Math.max(0, team.score + delta) } : team));
   };
 
-  const useToken = (i: number) => {
-    setTeams((t) => t.map((team, idx) => idx === i && team.tokens > 0 ? { ...team, tokens: team.tokens - 1 } : team));
-  };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
 
@@ -241,34 +238,17 @@ const Index = () => {
       {/* Marcador */}
       <div className="grid grid-cols-2 gap-3">
         {teams.map((team, i) => (
-          <Card key={i} className="p-3 flex flex-col items-center gap-3 border-primary/40 bg-card/60 backdrop-blur neon-hover">
+          <Card key={i} className="p-4 flex flex-col items-center gap-3 border-primary/40 bg-card/60 backdrop-blur neon-hover">
             <div className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{team.name}</div>
             <div
               key={team.score}
-              className="relative h-20 w-20 rounded-full flex items-center justify-center bg-black border-2 border-primary neon-glow-strong animate-scale-in"
+              className="relative h-32 w-32 rounded-full flex items-center justify-center bg-black border-2 border-primary neon-glow-strong animate-scale-in"
             >
-              <span className="text-3xl font-black text-primary neon-text tabular-nums">{team.score}</span>
+              <span className="text-6xl font-black text-primary neon-text tabular-nums leading-none">{team.score}</span>
             </div>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="h-10 w-10 text-xl border-primary/60 bg-black neon-hover" onClick={() => adjustScore(i, -1)}>−</Button>
-              <Button size="sm" variant="outline" className="h-10 w-10 text-xl border-primary/60 bg-black neon-hover" onClick={() => adjustScore(i, 1)}>+</Button>
-            </div>
-            <div className="flex gap-1.5">
-              {Array.from({ length: 3 }).map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => idx < team.tokens && useToken(i)}
-                  disabled={idx >= team.tokens}
-                  className={`h-9 w-9 rounded-full flex items-center justify-center transition-all duration-200 ${
-                    idx < team.tokens
-                      ? "bg-primary text-primary-foreground neon-glow hover:scale-110 hover:neon-glow-strong"
-                      : "bg-muted opacity-30"
-                  }`}
-                  aria-label="Comodín"
-                >
-                  <Coins className="h-4 w-4" />
-                </button>
-              ))}
+            <div className="flex gap-3">
+              <Button size="sm" variant="outline" className="h-12 w-12 text-2xl border-primary/60 bg-black neon-hover" onClick={() => adjustScore(i, -1)}>−</Button>
+              <Button size="sm" variant="outline" className="h-12 w-12 text-2xl border-primary/60 bg-black neon-hover" onClick={() => adjustScore(i, 1)}>+</Button>
             </div>
           </Card>
         ))}
@@ -338,9 +318,21 @@ const Index = () => {
             >
               {currentSong.year}
             </div>
-            <div className="text-center animate-fade-in">
-              <div className="text-3xl font-bold">{currentSong.artist}</div>
-              <div className="text-xl text-muted-foreground mt-1">{currentSong.title}</div>
+            <div className="text-center animate-fade-in max-w-full px-4">
+              {(() => {
+                const parts = currentSong.artist.split(/,\s*|\s+&\s+|\s+feat\.?\s+|\s+ft\.?\s+/i).filter(Boolean);
+                const main = parts[0] || currentSong.artist;
+                const rest = parts.slice(1);
+                return (
+                  <>
+                    <div className="text-4xl font-black text-primary neon-text leading-tight">{main}</div>
+                    {rest.length > 0 && (
+                      <div className="text-lg font-medium text-muted-foreground mt-1">feat. {rest.join(", ")}</div>
+                    )}
+                  </>
+                );
+              })()}
+              <div className="text-xl text-foreground/80 mt-2 italic">{currentSong.title}</div>
             </div>
           </div>
           <Button
