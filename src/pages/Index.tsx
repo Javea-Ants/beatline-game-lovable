@@ -108,7 +108,6 @@ const Index = () => {
   };
 
   const handleSkip = async () => {
-    await pausePlayback();
     setCurrentSong(null);
     await loadAndPlay(pickRandom());
   };
@@ -136,9 +135,7 @@ const Index = () => {
   };
 
   const handleNext = async () => {
-    await pausePlayback();
     setCurrentSong(null);
-    setPhase("idle");
     await loadAndPlay(pickRandom());
   };
 
