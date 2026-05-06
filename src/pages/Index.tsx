@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 type Phase = "idle" | "playing" | "revealed";
 
-interface Team { name: string; score: number; tokens: number; }
+interface Team { name: string; score: number; }
 
 const DEFAULT_PLAYLIST_NAME = "Temazos de varias décadas";
 
@@ -28,8 +28,8 @@ const Index = () => {
   const [loadingPlaylist, setLoadingPlaylist] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [teams, setTeams] = useState<Team[]>([
-    { name: "Equipo 1", score: 0, tokens: 3 },
-    { name: "Equipo 2", score: 0, tokens: 3 },
+    { name: "Equipo 1", score: 0 },
+    { name: "Equipo 2", score: 0 },
   ]);
 
   useEffect(() => {
