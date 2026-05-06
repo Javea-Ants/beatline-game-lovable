@@ -146,9 +146,6 @@ const Index = () => {
     setTeams((t) => t.map((team, idx) => idx === i ? { ...team, score: Math.max(0, team.score + delta) } : team));
   };
 
-  const useToken = (i: number) => {
-    setTeams((t) => t.map((team, idx) => idx === i && team.tokens > 0 ? { ...team, tokens: team.tokens - 1 } : team));
-  };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
 
