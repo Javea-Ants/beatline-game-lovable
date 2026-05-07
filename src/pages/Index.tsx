@@ -316,7 +316,7 @@ const Index = () => {
               aria-label="Volver al menú"
               className="h-12 w-12 rounded-xl border border-primary/50 bg-black/60 text-foreground hover:bg-primary/20"
             >
-              <Home className="h-5 w-5" />
+              <Undo2 className="h-5 w-5" />
             </Button>
             <Button
               onClick={handleTogglePause}
