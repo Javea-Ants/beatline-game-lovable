@@ -48,7 +48,12 @@
   }
   .neon-hover {
     transition: box-shadow 0.25s ease, transform 0.2s ease, filter 0.25s ease;
-  }
+}
+
+@keyframes eq-bar {
+  0% { height: 15%; }
+  100% { height: 90%; }
+}
   .neon-hover:hover, .neon-hover:active {
     box-shadow:
       0 0 24px hsl(var(--neon) / 0.9),

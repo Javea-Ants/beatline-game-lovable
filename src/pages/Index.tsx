@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { loginWithSpotify, handleRedirect, getAccessToken, playTrack, pausePlayback, resumePlayback, seekTo, logout, fetchTrack, extractPlaylistId, fetchPlaylistSongs } from "@/lib/spotify";
 import { SONGS, type Song } from "@/lib/songs";
-import { Play, Pause, SkipForward, SkipBack, Eye, LogOut, Copy, Disc3, Settings } from "lucide-react";
+import { Play, Pause, SkipForward, SkipBack, Eye, LogOut, Copy, Disc3, Settings, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 type Phase = "idle" | "playing" | "revealed";
@@ -288,9 +288,34 @@ const Index = () => {
 
       </section>
 
+      {/* Visualizador de audio */}
+      {(phase === "playing" || phase === "revealed") && currentSong && (
+        <div className="flex items-end justify-center gap-1.5 h-16 pb-2" aria-hidden="true">
+          {Array.from({ length: 24 }).map((_, i) => (
+            <span
+              key={i}
+              className="w-2 rounded-full bg-primary"
+              style={{
+                height: isPaused ? "8px" : `${20 + ((i * 37) % 60)}%`,
+                animation: isPaused ? "none" : `eq-bar ${0.6 + (i % 5) * 0.15}s ease-in-out ${i * 0.05}s infinite alternate`,
+                boxShadow: "0 0 8px hsl(var(--neon) / 0.6)",
+                transition: "height 0.3s ease",
+              }}
+            />
+          ))}
+        </div>
+      )}
+
       {phase === "revealed" && currentSong && (
         <div key={`reveal-${currentSong.uri}`} className="fixed inset-0 z-50 bg-black flex flex-col p-6 gap-6 overflow-y-auto animate-fade-in">
-          <div className="flex justify-end">
+          <div className="flex justify-between items-center">
+            <Button
+              onClick={() => setPhase("playing")}
+              variant="outline"
+              className="h-12 rounded-xl border border-primary/50 bg-black/60 text-foreground hover:bg-primary/20"
+            >
+              <ArrowLeft className="h-5 w-5 mr-2" /> Volver al menú
+            </Button>
             <Button
               onClick={handleTogglePause}
               variant="outline"
