@@ -239,9 +239,9 @@ const Index = () => {
             <div className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{team.name}</div>
             <div
               key={team.score}
-              className="relative h-32 w-32 rounded-full flex items-center justify-center bg-black border-2 border-primary neon-glow-strong animate-scale-in"
+              className="relative h-32 w-32 rounded-full flex items-center justify-center bg-black border-2 border-primary animate-scale-in"
             >
-              <span className="text-6xl font-black text-primary neon-text tabular-nums leading-none">{team.score}</span>
+              <span className="text-6xl font-black text-white tabular-nums leading-none">{team.score}</span>
             </div>
             <div className="flex gap-3">
               <Button size="sm" variant="outline" className="h-12 w-12 text-2xl border-primary/60 bg-black neon-hover" onClick={() => adjustScore(i, -1)}>−</Button>
@@ -269,8 +269,8 @@ const Index = () => {
             <div className="text-center text-lg text-muted-foreground animate-pulse tracking-widest uppercase">
               {isPaused ? "En pausa" : "Sonando..."}
             </div>
-            <Button onClick={handleReveal} className="h-24 text-2xl rounded-2xl neon-glow-strong bg-primary hover:bg-primary/90 neon-hover font-black tracking-wide">
-              <Eye className="h-8 w-8 mr-3" /> REVELAR INFO
+            <Button onClick={handleReveal} className="h-32 w-full text-3xl rounded-2xl bg-primary hover:bg-primary/90 neon-hover font-black tracking-wide">
+              <Eye className="h-10 w-10 mr-3" /> REVELAR INFO
             </Button>
             <div className="grid grid-cols-3 gap-3">
               <Button onClick={handleRestart} variant="outline" className="h-20 rounded-2xl border-2 border-primary bg-black hover:bg-primary/20 neon-hover">
@@ -334,8 +334,7 @@ const Index = () => {
           </div>
           <Button
             onClick={handleNext}
-            variant="outline"
-            className="h-20 w-full text-lg rounded-2xl bg-secondary/60 hover:bg-secondary text-foreground/80 border border-primary/30 font-semibold tracking-wide"
+            className="h-28 w-full text-2xl rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-black tracking-wide neon-glow-strong"
           >
             SIGUIENTE CANCIÓN
           </Button>
