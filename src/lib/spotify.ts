@@ -215,29 +215,67 @@ export async function seekTo(positionMs: number) {
   if (player) { try { await player.seek(positionMs); return; } catch {} }
 }
 
+function pickLargest(images: { url: string; width?: number }[] | undefined): string | null {
+  if (!images || !images.length) return null;
+  return [...images].sort((a, b) => (b.width || 0) - (a.width || 0))[0]?.url || null;
+}
+
+const singleArtCache = new Map<string, string | null>();
+
+async function findSingleCover(
+  token: string,
+  trackName: string,
+  artistName: string,
+  fallbackArt: string | null
+): Promise<string | null> {
+  const cacheKey = `${trackName}|${artistName}`.toLowerCase();
+  if (singleArtCache.has(cacheKey)) return singleArtCache.get(cacheKey) || fallbackArt;
+  try {
+    const q = encodeURIComponent(`track:"${trackName}" artist:"${artistName}"`);
+    const res = await fetch(
+      `https://api.spotify.com/v1/search?type=track&limit=10&q=${q}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!res.ok) {
+      singleArtCache.set(cacheKey, null);
+      return fallbackArt;
+    }
+    const data = await res.json();
+    const items: any[] = data?.tracks?.items || [];
+    const single = items.find(
+      (t) =>
+        t?.album?.album_type === "single" &&
+        t.name?.toLowerCase() === trackName.toLowerCase() &&
+        (t.artists || []).some((a: any) => a.name?.toLowerCase() === artistName.toLowerCase())
+    );
+    const url = pickLargest(single?.album?.images);
+    singleArtCache.set(cacheKey, url);
+    return url || fallbackArt;
+  } catch {
+    return fallbackArt;
+  }
+}
+
 export async function fetchTrack(uri: string): Promise<{ albumArt: string | null }> {
   const id = uri.split(":").pop();
   const token = await getAccessToken();
   if (!token || !id) return { albumArt: null };
-  const tryFetch = async () => {
+  try {
     const res = await fetch(`https://api.spotify.com/v1/tracks/${id}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!res.ok) return null;
+    if (!res.ok) return { albumArt: null };
     const data = await res.json();
-    const images: { url: string; width: number }[] = data?.album?.images || [];
-    if (!images.length) return null;
-    // Pick largest by width
-    const best = [...images].sort((a, b) => (b.width || 0) - (a.width || 0))[0];
-    return best?.url || null;
-  };
-  try {
-    let url = await tryFetch();
-    if (!url) {
-      await new Promise((r) => setTimeout(r, 400));
-      url = await tryFetch();
+    const fallback = pickLargest(data?.album?.images);
+    const trackName: string = data?.name || "";
+    const artistName: string = data?.artists?.[0]?.name || "";
+    // If already a single, just use it
+    if (data?.album?.album_type === "single") {
+      return { albumArt: fallback };
     }
-    return { albumArt: url };
+    if (!trackName || !artistName) return { albumArt: fallback };
+    const best = await findSingleCover(token, trackName, artistName, fallback);
+    return { albumArt: best };
   } catch {
     return { albumArt: null };
   }
