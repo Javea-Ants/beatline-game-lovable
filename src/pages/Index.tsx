@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { loginWithSpotify, handleRedirect, getAccessToken, playTrack, pausePlayback, resumePlayback, seekTo, logout, fetchTrack, extractPlaylistId, fetchPlaylistSongs } from "@/lib/spotify";
 import { SONGS, type Song } from "@/lib/songs";
-import { Play, Pause, SkipForward, SkipBack, Eye, LogOut, Copy, Disc3, Settings, ArrowLeft, Home } from "lucide-react";
+import { Play, Pause, SkipForward, SkipBack, Eye, LogOut, Copy, Disc3, Settings, ArrowLeft, Home, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 
 type Phase = "idle" | "playing" | "revealed";
@@ -316,7 +316,7 @@ const Index = () => {
               aria-label="Volver al menú"
               className="h-12 w-12 rounded-xl border border-primary/50 bg-black/60 text-foreground hover:bg-primary/20"
             >
-              <Home className="h-5 w-5" />
+              <Undo2 className="h-5 w-5" />
             </Button>
             <Button
               onClick={handleTogglePause}
