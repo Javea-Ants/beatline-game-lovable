@@ -347,19 +347,43 @@ export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistRe
   });
   if (!metaRes.ok) throw new Error("Playlist no encontrada");
   const meta = await metaRes.json();
-  const tracksRes = await fetch(
-    `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50&fields=items(track(uri,type,is_local,id,name,artists(name),album(release_date,images)))`,
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
-  const tracksData = await tracksRes.json();
-  const songs = (tracksData.items || [])
-    .map((it: any) => it.track)
+
+  const PAGE_SIZE = 100;
+  const MAX_PAGES = 50; // safety cap: up to 5000 tracks
+  const fields =
+    "items(track(uri,type,is_local,id,name,artists(name),album(release_date,images))),next,total";
+
+  const allItems: any[] = [];
+  let offset = 0;
+  let pages = 0;
+
+  while (pages < MAX_PAGES) {
+    const url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=${PAGE_SIZE}&offset=${offset}&fields=${encodeURIComponent(
+      fields
+    )}`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) {
+      if (pages === 0) throw new Error("No se pudieron cargar las canciones");
+      break;
+    }
+    const data = await res.json();
+    const items = Array.isArray(data?.items) ? data.items : [];
+    allItems.push(...items);
+    pages += 1;
+    if (!data?.next || items.length < PAGE_SIZE) break;
+    offset += PAGE_SIZE;
+  }
+
+  const seen = new Set<string>();
+  const songs = allItems
+    .map((it: any) => it?.track)
     .filter(
       (t: any) =>
         t &&
         t.type === "track" &&
         !t.is_local &&
         t.uri &&
+        typeof t.uri === "string" &&
         t.uri.startsWith("spotify:track:") &&
         t.id &&
         t.name &&
@@ -367,14 +391,19 @@ export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistRe
         t.artists.length > 0
     )
     .map((t: any) => ({
-      id: t.id,
-      title: t.name,
-      artist: (t.artists || []).map((a: any) => a.name).join(", "),
+      id: t.id as string,
+      title: t.name as string,
+      artist: (t.artists || []).map((a: any) => a.name).filter(Boolean).join(", "),
       year: parseInt((t.album?.release_date || "0").slice(0, 4), 10) || 0,
-      uri: t.uri,
+      uri: t.uri as string,
       albumArt: t.album?.images?.[0]?.url || null,
     }))
-    .filter((s: any) => s.year > 0)
-    .slice(0, 50);
+    .filter((s) => s.year > 0)
+    .filter((s) => {
+      if (seen.has(s.id)) return false;
+      seen.add(s.id);
+      return true;
+    });
+
   return { name: meta.name || "Playlist personalizada", songs };
 }
