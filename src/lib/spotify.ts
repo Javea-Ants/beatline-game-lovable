@@ -64,12 +64,19 @@ export async function handleRedirect(): Promise<boolean> {
   return false;
 }
 
-interface TokenData { access_token: string; refresh_token?: string; expires_in: number; }
+interface TokenData { access_token: string; refresh_token?: string; expires_in: number; scope?: string; }
 
 function saveTokens(data: TokenData) {
   localStorage.setItem("spotify_token", data.access_token);
   if (data.refresh_token) localStorage.setItem("spotify_refresh", data.refresh_token);
   localStorage.setItem("spotify_expires", String(Date.now() + data.expires_in * 1000));
+  if (data.scope) localStorage.setItem("spotify_scope", data.scope);
+}
+
+export function hasRequiredScopes(): boolean {
+  const scope = localStorage.getItem("spotify_scope") || "";
+  const granted = scope.split(" ").filter(Boolean);
+  return REQUIRED_SCOPES.every((s) => granted.includes(s));
 }
 
 export async function getAccessToken(): Promise<string | null> {
