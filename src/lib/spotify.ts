@@ -348,50 +348,67 @@ export interface PlaylistResult {
   songs: { id: string; title: string; artist: string; year: number; uri: string; albumArt: string | null }[];
 }
 
-async function spotifyErrorMessage(res: Response, kind: "meta" | "tracks"): Promise<string> {
-  let bodyText = "";
+async function readSpotifyError(res: Response, kind: string): Promise<{ status: number; reason: string; body: string }> {
+  let body = "";
   let reason = "";
   try {
     const j = await res.clone().json();
     reason = j?.error?.message || j?.error?.reason || "";
-    bodyText = JSON.stringify(j);
+    body = JSON.stringify(j);
   } catch {
-    try { bodyText = await res.text(); } catch {}
+    try { body = await res.text(); } catch {}
   }
-  console.error(`[Spotify ${kind}] HTTP ${res.status}`, bodyText);
+  console.error(`[Spotify ${kind}] HTTP ${res.status}`, { reason, body });
+  return { status: res.status, reason, body };
+}
 
-  switch (res.status) {
+function mapSpotifyStatus(status: number, reason: string, kind: "meta" | "items"): string {
+  switch (status) {
+    case 400:
+      return `Petición inválida a Spotify${reason ? `: ${reason}` : ""}`;
     case 401:
-      return "Sesión de Spotify expirada. Vuelve a iniciar sesión.";
+      return "Token inválido o expirado. Vuelve a iniciar sesión.";
     case 403:
-      if (!hasRequiredScopes()) {
-        return "Permisos insuficientes de Spotify. Cierra sesión y vuelve a entrar para conceder acceso a las playlists.";
-      }
-      return "No tienes acceso a esta playlist (privada, colaborativa sin permiso o restringida por Spotify).";
+      return "Sin permisos o scopes insuficientes para esta playlist.";
     case 404:
-      return "Playlist no encontrada. Comprueba el enlace.";
+      return "Playlist no encontrada o no accesible por la API de Spotify.";
     case 429:
       return "Spotify ha limitado las peticiones. Inténtalo en unos segundos.";
+    case 500:
+    case 502:
+    case 503:
+    case 504:
+      return `Spotify no está disponible ahora mismo (${status}). Inténtalo de nuevo.`;
     default:
-      return `Error de Spotify (${res.status})${reason ? `: ${reason}` : ""}`;
+      return `Error de Spotify al cargar ${kind === "meta" ? "la playlist" : "las canciones"} (${status})${reason ? `: ${reason}` : ""}`;
   }
 }
 
 export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistResult> {
   const token = await getAccessToken();
-  if (!token) throw new Error("Sesión de Spotify expirada. Vuelve a iniciar sesión.");
-  if (!hasRequiredScopes()) {
-    throw new Error(
-      "Permisos insuficientes de Spotify. Cierra sesión y vuelve a entrar para conceder acceso a las playlists."
-    );
-  }
+  if (!token) throw new Error("Token inválido o expirado. Vuelve a iniciar sesión.");
 
-  const metaRes = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}?fields=name`, {
+  // 1) Playlist metadata — use market=from_token for proper relinking & access checks
+  const metaUrl = `https://api.spotify.com/v1/playlists/${encodeURIComponent(
+    playlistId
+  )}?fields=name,owner(id,display_name),public,tracks(total)&market=from_token`;
+  const metaRes = await fetch(metaUrl, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!metaRes.ok) throw new Error(await spotifyErrorMessage(metaRes, "meta"));
+  if (!metaRes.ok) {
+    const err = await readSpotifyError(metaRes, "meta");
+    throw new Error(mapSpotifyStatus(err.status, err.reason, "meta"));
+  }
   const meta = await metaRes.json();
+  console.info("[Spotify meta] ok", {
+    id: playlistId,
+    name: meta?.name,
+    owner: meta?.owner?.id,
+    public: meta?.public,
+    total: meta?.tracks?.total,
+  });
 
+  // 2) Playlist items — modern endpoint, paginated
   const PAGE_SIZE = 100;
   const MAX_PAGES = 50;
   const fields =
@@ -400,22 +417,35 @@ export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistRe
   const allItems: any[] = [];
   let offset = 0;
   let pages = 0;
+  let totalReported = 0;
 
   while (pages < MAX_PAGES) {
-    const url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=${PAGE_SIZE}&offset=${offset}&fields=${encodeURIComponent(
-      fields
-    )}`;
+    const url = `https://api.spotify.com/v1/playlists/${encodeURIComponent(
+      playlistId
+    )}/tracks?limit=${PAGE_SIZE}&offset=${offset}&market=from_token&fields=${encodeURIComponent(fields)}`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok) {
-      if (pages === 0) throw new Error(await spotifyErrorMessage(res, "tracks"));
-      break;
+      const err = await readSpotifyError(res, "items");
+      // Always surface the precise status — do not fall back silently to a generic message
+      throw new Error(mapSpotifyStatus(err.status, err.reason, "items"));
     }
     const data = await res.json();
     const items = Array.isArray(data?.items) ? data.items : [];
+    if (typeof data?.total === "number") totalReported = data.total;
     allItems.push(...items);
     pages += 1;
-    if (!data?.next || items.length < PAGE_SIZE) break;
+    if (!data?.next || items.length === 0 || items.length < PAGE_SIZE) break;
     offset += PAGE_SIZE;
+  }
+
+  console.info("[Spotify items] fetched", {
+    received: allItems.length,
+    total: totalReported,
+    pages,
+  });
+
+  if (allItems.length === 0) {
+    throw new Error("La playlist está vacía.");
   }
 
   const seen = new Set<string>();
@@ -426,7 +456,6 @@ export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistRe
         t &&
         t.type === "track" &&
         !t.is_local &&
-        t.uri &&
         typeof t.uri === "string" &&
         t.uri.startsWith("spotify:track:") &&
         t.id &&
@@ -450,9 +479,9 @@ export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistRe
     });
 
   if (songs.length === 0) {
-    throw new Error("La playlist no contiene canciones válidas con año de publicación.");
+    throw new Error("No se encontraron canciones válidas en la playlist.");
   }
 
-  return { name: meta.name || "Playlist personalizada", songs };
+  return { name: meta?.name || "Playlist personalizada", songs };
 }
 
