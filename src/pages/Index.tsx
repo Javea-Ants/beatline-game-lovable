@@ -36,6 +36,12 @@ const Index = () => {
     (async () => {
       await handleRedirect();
       const t = await getAccessToken();
+      if (t && !hasRequiredScopes()) {
+        toast.message("Actualizando permisos de Spotify para leer playlists...");
+        logout();
+        await loginWithSpotify();
+        return;
+      }
       setAuthed(!!t);
       setLoading(false);
     })();
