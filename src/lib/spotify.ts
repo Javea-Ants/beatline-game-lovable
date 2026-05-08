@@ -107,6 +107,7 @@ export function logout() {
   localStorage.removeItem("spotify_token");
   localStorage.removeItem("spotify_refresh");
   localStorage.removeItem("spotify_expires");
+  localStorage.removeItem("spotify_scope");
 }
 
 // Web Playback SDK
