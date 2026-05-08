@@ -348,17 +348,52 @@ export interface PlaylistResult {
   songs: { id: string; title: string; artist: string; year: number; uri: string; albumArt: string | null }[];
 }
 
+async function spotifyErrorMessage(res: Response, kind: "meta" | "tracks"): Promise<string> {
+  let bodyText = "";
+  let reason = "";
+  try {
+    const j = await res.clone().json();
+    reason = j?.error?.message || j?.error?.reason || "";
+    bodyText = JSON.stringify(j);
+  } catch {
+    try { bodyText = await res.text(); } catch {}
+  }
+  console.error(`[Spotify ${kind}] HTTP ${res.status}`, bodyText);
+
+  switch (res.status) {
+    case 401:
+      return "Sesión de Spotify expirada. Vuelve a iniciar sesión.";
+    case 403:
+      if (!hasRequiredScopes()) {
+        return "Permisos insuficientes de Spotify. Cierra sesión y vuelve a entrar para conceder acceso a las playlists.";
+      }
+      return "No tienes acceso a esta playlist (privada, colaborativa sin permiso o restringida por Spotify).";
+    case 404:
+      return "Playlist no encontrada. Comprueba el enlace.";
+    case 429:
+      return "Spotify ha limitado las peticiones. Inténtalo en unos segundos.";
+    default:
+      return `Error de Spotify (${res.status})${reason ? `: ${reason}` : ""}`;
+  }
+}
+
 export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistResult> {
   const token = await getAccessToken();
-  if (!token) throw new Error("No token");
+  if (!token) throw new Error("Sesión de Spotify expirada. Vuelve a iniciar sesión.");
+  if (!hasRequiredScopes()) {
+    throw new Error(
+      "Permisos insuficientes de Spotify. Cierra sesión y vuelve a entrar para conceder acceso a las playlists."
+    );
+  }
+
   const metaRes = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}?fields=name`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!metaRes.ok) throw new Error("Playlist no encontrada");
+  if (!metaRes.ok) throw new Error(await spotifyErrorMessage(metaRes, "meta"));
   const meta = await metaRes.json();
 
   const PAGE_SIZE = 100;
-  const MAX_PAGES = 50; // safety cap: up to 5000 tracks
+  const MAX_PAGES = 50;
   const fields =
     "items(track(uri,type,is_local,id,name,artists(name),album(release_date,images))),next,total";
 
@@ -372,7 +407,7 @@ export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistRe
     )}`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok) {
-      if (pages === 0) throw new Error("No se pudieron cargar las canciones");
+      if (pages === 0) throw new Error(await spotifyErrorMessage(res, "tracks"));
       break;
     }
     const data = await res.json();
@@ -414,5 +449,10 @@ export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistRe
       return true;
     });
 
+  if (songs.length === 0) {
+    throw new Error("La playlist no contiene canciones válidas con año de publicación.");
+  }
+
   return { name: meta.name || "Playlist personalizada", songs };
 }
+
