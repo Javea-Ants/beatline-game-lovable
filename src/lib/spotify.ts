@@ -1,5 +1,6 @@
 const CLIENT_ID = "a9a6bce68cd7480990324e9b379fa4bd";
-const SCOPES = "streaming user-read-email user-read-private user-modify-playback-state user-read-playback-state";
+const SCOPES = "streaming user-read-email user-read-private user-modify-playback-state user-read-playback-state playlist-read-private playlist-read-collaborative";
+const REQUIRED_SCOPES = SCOPES.split(" ");
 
 const REDIRECT_URI = window.location.origin + "/";
 
