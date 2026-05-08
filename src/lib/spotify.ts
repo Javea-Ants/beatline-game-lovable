@@ -282,11 +282,55 @@ export async function fetchTrack(uri: string): Promise<{ albumArt: string | null
 }
 
 export function extractPlaylistId(input: string): string | null {
-  let trimmed = input.trim().split("?")[0];
-  let m = trimmed.match(/playlist[/:]([a-zA-Z0-9]+)/);
-  if (m) return m[1];
-  const tail = trimmed.split("/").pop() || trimmed;
-  if (/^[a-zA-Z0-9]{22}$/.test(tail)) return tail;
+  if (!input || typeof input !== "string") return null;
+  const text = input.trim();
+  if (!text) return null;
+
+  const ID_RE = /^[a-zA-Z0-9]{22}$/;
+  const OTHER_TYPES = ["track", "album", "artist", "show", "episode", "user", "collection"];
+
+  // 1. Raw playlist ID
+  if (ID_RE.test(text)) return text;
+
+  // 2. Spotify URI: spotify:playlist:{id} (possibly embedded)
+  const uriMatch = text.match(/spotify:([a-z]+):([a-zA-Z0-9]{22})/i);
+  if (uriMatch) {
+    if (uriMatch[1].toLowerCase() === "playlist") return uriMatch[2];
+    if (OTHER_TYPES.includes(uriMatch[1].toLowerCase())) return null;
+  }
+
+  // 3. Try to find a URL inside the text and parse it
+  const urlMatches = text.match(/https?:\/\/[^\s]+/gi) || [];
+  const candidates: string[] = urlMatches.length ? urlMatches : [text];
+
+  for (const candidate of candidates) {
+    let cleaned = candidate.replace(/[)>\].,;'"]+$/g, "");
+    let url: URL | null = null;
+    try {
+      url = new URL(cleaned);
+    } catch {
+      try {
+        url = new URL("https://" + cleaned);
+      } catch {
+        url = null;
+      }
+    }
+    if (url && /(^|\.)spotify\.com$/i.test(url.hostname)) {
+      // Path may be /playlist/{id} or /intl-xx/playlist/{id} or /user/x/playlist/{id}
+      const parts = url.pathname.split("/").filter(Boolean);
+      const idx = parts.findIndex((p) => p.toLowerCase() === "playlist");
+      if (idx !== -1 && parts[idx + 1] && ID_RE.test(parts[idx + 1])) {
+        return parts[idx + 1];
+      }
+      // If URL clearly references another entity type, skip
+      if (parts.some((p) => OTHER_TYPES.includes(p.toLowerCase()))) continue;
+    }
+  }
+
+  // 4. Last-resort regex over the whole input for /playlist/{id}
+  const pathMatch = text.match(/playlist[/:]([a-zA-Z0-9]{22})(?![a-zA-Z0-9])/i);
+  if (pathMatch) return pathMatch[1];
+
   return null;
 }
 
