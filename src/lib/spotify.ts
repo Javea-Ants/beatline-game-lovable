@@ -484,7 +484,18 @@ export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistRe
     throw new Error("La playlist está vacía.");
   }
 
-  const rawTracks = allItems.map((it: any) => it?.track);
+  function getPlaylistTrack(it: any) {
+    if (!it) return null;
+    if (it.track) return it.track;
+    if (it.item) return it.item;
+    return null;
+  }
+
+  const extracted = allItems.map((it: any) => {
+    const t = getPlaylistTrack(it);
+    const isLocal = (t && t.is_local) ?? it?.is_local ?? false;
+    return { t, isLocal };
+  });
 
   // Diagnostic counters
   const drop = {
@@ -497,27 +508,30 @@ export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistRe
     yearMissingOrZero: 0,
   };
 
-  const validTracks = rawTracks.filter((t: any) => {
-    if (!t) { drop.missingTrackObject++; return false; }
-    // Only drop if type is explicitly a non-musical type. `type` may be omitted.
-    if (typeof t.type === "string" && t.type !== "track") {
-      drop.wrongType++;
-      return false;
-    }
-    if (t.is_local === true) { drop.localTrack++; return false; }
-    if (!t.id || !t.name) { drop.missingIdOrName++; return false; }
-    if (!Array.isArray(t.artists) || t.artists.length === 0) {
-      drop.missingArtists++;
-      return false;
-    }
-    // URI: accept spotify:track:* or build from id
-    const hasValidUri = typeof t.uri === "string" && t.uri.startsWith("spotify:track:");
-    if (!hasValidUri && !t.id) {
-      drop.missingOrInvalidUri++;
-      return false;
-    }
-    return true;
-  });
+  const validTracks = extracted
+    .filter(({ t }) => {
+      if (!t) { drop.missingTrackObject++; return false; }
+      return true;
+    })
+    .filter(({ t, isLocal }) => {
+      if (typeof t.type === "string" && t.type !== "track") {
+        drop.wrongType++;
+        return false;
+      }
+      if (isLocal === true) { drop.localTrack++; return false; }
+      if (!t.id || !t.name) { drop.missingIdOrName++; return false; }
+      if (!Array.isArray(t.artists) || t.artists.length === 0) {
+        drop.missingArtists++;
+        return false;
+      }
+      const hasValidUri = typeof t.uri === "string" && t.uri.startsWith("spotify:track:");
+      if (!hasValidUri && !t.id) {
+        drop.missingOrInvalidUri++;
+        return false;
+      }
+      return true;
+    })
+    .map(({ t }) => t);
   const beforeFiltering = validTracks.length;
 
   const mapped = validTracks.map((t: any) => {
