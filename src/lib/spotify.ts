@@ -447,6 +447,7 @@ export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistRe
   const MAX_PAGES = 50;
   const fields =
     "items(track(uri,type,is_local,id,name,artists(name),album(release_date,images))),next,total";
+  // Note: `type` may be omitted by Spotify in some responses even when requested.
 
   const allItems: any[] = [];
   let offset = 0;
@@ -484,35 +485,61 @@ export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistRe
   }
 
   const rawTracks = allItems.map((it: any) => it?.track);
-  const validTracks = rawTracks.filter(
-    (t: any) =>
-      t &&
-      t.type === "track" &&
-      !t.is_local &&
-      typeof t.uri === "string" &&
-      t.uri.startsWith("spotify:track:") &&
-      t.id &&
-      t.name &&
-      Array.isArray(t.artists) &&
-      t.artists.length > 0
-  );
+
+  // Diagnostic counters
+  const drop = {
+    missingTrackObject: 0,
+    wrongType: 0,
+    localTrack: 0,
+    missingOrInvalidUri: 0,
+    missingIdOrName: 0,
+    missingArtists: 0,
+    yearMissingOrZero: 0,
+  };
+
+  const validTracks = rawTracks.filter((t: any) => {
+    if (!t) { drop.missingTrackObject++; return false; }
+    // Only drop if type is explicitly a non-musical type. `type` may be omitted.
+    if (typeof t.type === "string" && t.type !== "track") {
+      drop.wrongType++;
+      return false;
+    }
+    if (t.is_local === true) { drop.localTrack++; return false; }
+    if (!t.id || !t.name) { drop.missingIdOrName++; return false; }
+    if (!Array.isArray(t.artists) || t.artists.length === 0) {
+      drop.missingArtists++;
+      return false;
+    }
+    // URI: accept spotify:track:* or build from id
+    const hasValidUri = typeof t.uri === "string" && t.uri.startsWith("spotify:track:");
+    if (!hasValidUri && !t.id) {
+      drop.missingOrInvalidUri++;
+      return false;
+    }
+    return true;
+  });
   const beforeFiltering = validTracks.length;
 
-  const mapped = validTracks.map((t: any) => ({
-    id: t.id as string,
-    title: t.name as string,
-    artist: (t.artists || []).map((a: any) => a.name).filter(Boolean).join(", "),
-    year: parseInt((t.album?.release_date || "0").slice(0, 4), 10) || 0,
-    uri: t.uri as string,
-    albumArt: t.album?.images?.[0]?.url || null,
-  }));
+  const mapped = validTracks.map((t: any) => {
+    const uri =
+      typeof t.uri === "string" && t.uri.startsWith("spotify:track:")
+        ? t.uri
+        : `spotify:track:${t.id}`;
+    return {
+      id: t.id as string,
+      title: t.name as string,
+      artist: (t.artists || []).map((a: any) => a.name).filter(Boolean).join(", "),
+      year: parseInt((t.album?.release_date || "0").slice(0, 4), 10) || 0,
+      uri,
+      albumArt: t.album?.images?.[0]?.url || null,
+    };
+  });
 
-  let yearDropped = 0;
   const seen = new Set<string>();
   const songs = mapped
     .filter((s) => {
       if (s.year > 0) return true;
-      yearDropped++;
+      drop.yearMissingOrZero++;
       return false;
     })
     .filter((s) => {
@@ -527,7 +554,7 @@ export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistRe
     allItems: allItems.length,
     beforeFiltering,
     afterFiltering: songs.length,
-    yearDropped,
+    drops: drop,
   });
 
   if (songs.length === 0) {
