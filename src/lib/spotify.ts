@@ -427,12 +427,11 @@ export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistRe
   }
   const meta = await metaRes.json();
   console.info("[Spotify meta] ok", {
-    id: playlistId,
+    playlistId,
     name: meta?.name,
-    owner: meta?.owner?.id,
+    ownerId: meta?.owner?.id,
     public: meta?.public,
     total: meta?.tracks?.total,
-    meId,
   });
 
   // Dev Mode restriction: only allow playlists owned by the logged-in user
@@ -474,8 +473,9 @@ export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistRe
   }
 
   console.info("[Spotify items] fetched", {
+    playlistId,
+    totalReported,
     received: allItems.length,
-    total: totalReported,
     pages,
   });
 
@@ -483,35 +483,52 @@ export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistRe
     throw new Error("La playlist está vacía.");
   }
 
+  const rawTracks = allItems.map((it: any) => it?.track);
+  const validTracks = rawTracks.filter(
+    (t: any) =>
+      t &&
+      t.type === "track" &&
+      !t.is_local &&
+      typeof t.uri === "string" &&
+      t.uri.startsWith("spotify:track:") &&
+      t.id &&
+      t.name &&
+      Array.isArray(t.artists) &&
+      t.artists.length > 0
+  );
+  const beforeFiltering = validTracks.length;
+
+  const mapped = validTracks.map((t: any) => ({
+    id: t.id as string,
+    title: t.name as string,
+    artist: (t.artists || []).map((a: any) => a.name).filter(Boolean).join(", "),
+    year: parseInt((t.album?.release_date || "0").slice(0, 4), 10) || 0,
+    uri: t.uri as string,
+    albumArt: t.album?.images?.[0]?.url || null,
+  }));
+
+  let yearDropped = 0;
   const seen = new Set<string>();
-  const songs = allItems
-    .map((it: any) => it?.track)
-    .filter(
-      (t: any) =>
-        t &&
-        t.type === "track" &&
-        !t.is_local &&
-        typeof t.uri === "string" &&
-        t.uri.startsWith("spotify:track:") &&
-        t.id &&
-        t.name &&
-        Array.isArray(t.artists) &&
-        t.artists.length > 0
-    )
-    .map((t: any) => ({
-      id: t.id as string,
-      title: t.name as string,
-      artist: (t.artists || []).map((a: any) => a.name).filter(Boolean).join(", "),
-      year: parseInt((t.album?.release_date || "0").slice(0, 4), 10) || 0,
-      uri: t.uri as string,
-      albumArt: t.album?.images?.[0]?.url || null,
-    }))
-    .filter((s) => s.year > 0)
+  const songs = mapped
+    .filter((s) => {
+      if (s.year > 0) return true;
+      yearDropped++;
+      return false;
+    })
     .filter((s) => {
       if (seen.has(s.id)) return false;
       seen.add(s.id);
       return true;
     });
+
+  console.info("[Spotify items] filtered", {
+    playlistId,
+    totalReported,
+    allItems: allItems.length,
+    beforeFiltering,
+    afterFiltering: songs.length,
+    yearDropped,
+  });
 
   if (songs.length === 0) {
     throw new Error("No se encontraron canciones válidas en la playlist.");
