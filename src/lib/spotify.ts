@@ -457,7 +457,7 @@ export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistRe
   while (pages < MAX_PAGES) {
     const url = `https://api.spotify.com/v1/playlists/${encodeURIComponent(
       playlistId
-    )}/tracks?limit=${PAGE_SIZE}&offset=${offset}&market=from_token&fields=${encodeURIComponent(fields)}`;
+    )}/items?limit=${PAGE_SIZE}&offset=${offset}&market=from_token&fields=${encodeURIComponent(fields)}`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok) {
       const err = await readSpotifyError(res, "items");
