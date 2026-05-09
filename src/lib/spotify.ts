@@ -447,6 +447,7 @@ export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistRe
   const MAX_PAGES = 50;
   const fields =
     "items(track(uri,type,is_local,id,name,artists(name),album(release_date,images))),next,total";
+  // Note: `type` may be omitted by Spotify in some responses even when requested.
 
   const allItems: any[] = [];
   let offset = 0;
