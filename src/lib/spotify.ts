@@ -427,12 +427,11 @@ export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistRe
   }
   const meta = await metaRes.json();
   console.info("[Spotify meta] ok", {
-    id: playlistId,
+    playlistId,
     name: meta?.name,
-    owner: meta?.owner?.id,
+    ownerId: meta?.owner?.id,
     public: meta?.public,
     total: meta?.tracks?.total,
-    meId,
   });
 
   // Dev Mode restriction: only allow playlists owned by the logged-in user
