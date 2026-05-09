@@ -384,9 +384,34 @@ function mapSpotifyStatus(status: number, reason: string, kind: "meta" | "items"
   }
 }
 
+let cachedMeId: string | null = null;
+let cachedMeAt = 0;
+async function fetchCurrentUserId(token: string): Promise<string | null> {
+  if (cachedMeId && Date.now() - cachedMeAt < 5 * 60 * 1000) return cachedMeId;
+  try {
+    const res = await fetch("https://api.spotify.com/v1/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      console.warn("[Spotify me] HTTP", res.status);
+      return null;
+    }
+    const data = await res.json();
+    cachedMeId = data?.id || null;
+    cachedMeAt = Date.now();
+    return cachedMeId;
+  } catch (e) {
+    console.warn("[Spotify me] failed", e);
+    return null;
+  }
+}
+
 export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistResult> {
   const token = await getAccessToken();
   if (!token) throw new Error("Token inválido o expirado. Vuelve a iniciar sesión.");
+
+  // Fetch current user (Dev Mode: only own playlists are accessible)
+  const meId = await fetchCurrentUserId(token);
 
   // 1) Playlist metadata — use market=from_token for proper relinking & access checks
   const metaUrl = `https://api.spotify.com/v1/playlists/${encodeURIComponent(
@@ -397,6 +422,7 @@ export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistRe
   });
   if (!metaRes.ok) {
     const err = await readSpotifyError(metaRes, "meta");
+    console.error("[Spotify meta] failed", { playlistId, meId, status: err.status, reason: err.reason });
     throw new Error(mapSpotifyStatus(err.status, err.reason, "meta"));
   }
   const meta = await metaRes.json();
@@ -406,9 +432,18 @@ export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistRe
     owner: meta?.owner?.id,
     public: meta?.public,
     total: meta?.tracks?.total,
+    meId,
   });
 
-  // 2) Playlist items — modern endpoint, paginated
+  // Dev Mode restriction: only allow playlists owned by the logged-in user
+  const ownerId = meta?.owner?.id;
+  if (meId && ownerId && ownerId !== meId) {
+    throw new Error(
+      "En modo desarrollo solo puedes usar playlists creadas por tu propia cuenta de Spotify."
+    );
+  }
+
+  // 2) Playlist items — modern /items endpoint, paginated
   const PAGE_SIZE = 100;
   const MAX_PAGES = 50;
   const fields =
@@ -422,7 +457,7 @@ export async function fetchPlaylistSongs(playlistId: string): Promise<PlaylistRe
   while (pages < MAX_PAGES) {
     const url = `https://api.spotify.com/v1/playlists/${encodeURIComponent(
       playlistId
-    )}/tracks?limit=${PAGE_SIZE}&offset=${offset}&market=from_token&fields=${encodeURIComponent(fields)}`;
+    )}/items?limit=${PAGE_SIZE}&offset=${offset}&market=from_token&fields=${encodeURIComponent(fields)}`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok) {
       const err = await readSpotifyError(res, "items");
