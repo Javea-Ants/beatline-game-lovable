@@ -5,14 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { loginWithSpotify, handleRedirect, getAccessToken, playTrack, pausePlayback, resumePlayback, seekTo, logout, fetchTrack, extractPlaylistId, fetchPlaylistSongs, hasRequiredScopes } from "@/lib/spotify";
 import { SONGS, type Song } from "@/lib/songs";
-import { Play, Pause, SkipForward, SkipBack, Eye, LogOut, Copy, Disc3, Settings, ArrowLeft, Home, Undo2 } from "lucide-react";
+import { Play, Pause, SkipForward, SkipBack, Eye, LogOut, Copy, Disc3, Settings, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 
 type Phase = "idle" | "playing" | "revealed";
 
 interface Team { name: string; score: number; }
 
-const DEFAULT_PLAYLIST_NAME = "Temazos de varias décadas";
+const DEFAULT_PLAYLIST_NAME = "HITSTER – España";
+const DEFAULT_SPOTIFY_PLAYLIST_ID = "0eBDf1fYiwzj3IIhyaLxKN";
 
 interface CurrentSong extends Song { albumArt: string | null; }
 
@@ -23,7 +24,7 @@ const Index = () => {
   const [phase, setPhase] = useState<Phase>("idle");
   const [currentSong, setCurrentSong] = useState<CurrentSong | null>(null);
   const [playlistName, setPlaylistName] = useState(DEFAULT_PLAYLIST_NAME);
-  const [songs, setSongs] = useState<Song[]>(SONGS);
+  const [songs, setSongs] = useState<Song[]>(SONGS); // Fallback local si falla la playlist default de Spotify
   const [playlistInput, setPlaylistInput] = useState("");
   const [loadingPlaylist, setLoadingPlaylist] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -36,14 +37,44 @@ const Index = () => {
     (async () => {
       await handleRedirect();
       const t = await getAccessToken();
+
       if (t && !hasRequiredScopes()) {
         toast.message("Actualizando permisos de Spotify para leer playlists...");
         logout();
         await loginWithSpotify();
         return;
       }
-      setAuthed(!!t);
-      setLoading(false);
+
+      if (!t) {
+        setAuthed(false);
+        setSongs(SONGS);
+        setPlaylistName(DEFAULT_PLAYLIST_NAME);
+        setLoading(false);
+        return;
+      }
+
+      setAuthed(true);
+
+      try {
+        const result = await fetchPlaylistSongs(DEFAULT_SPOTIFY_PLAYLIST_ID);
+        const valid = result.songs.filter((s) => s.year > 0);
+
+        if (valid.length > 0) {
+          setSongs(valid);
+          setPlaylistName(DEFAULT_PLAYLIST_NAME);
+        } else {
+          setSongs(SONGS);
+          setPlaylistName(DEFAULT_PLAYLIST_NAME);
+          toast.message("No se pudo cargar la playlist por defecto desde Spotify. Se usa la lista local.");
+        }
+      } catch (e) {
+        console.error("Error cargando playlist default:", e);
+        setSongs(SONGS);
+        setPlaylistName(DEFAULT_PLAYLIST_NAME);
+        toast.message("No se pudo cargar la playlist por defecto desde Spotify. Se usa la lista local.");
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
@@ -149,7 +180,6 @@ const Index = () => {
     setTeams((t) => t.map((team, idx) => idx === i ? { ...team, score: Math.max(0, team.score + delta) } : team));
   };
 
-
   if (loading) return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
 
   if (!authed) {
@@ -232,7 +262,20 @@ const Index = () => {
               </div>
             </SheetContent>
           </Sheet>
-          <Button variant="ghost" size="icon" onClick={() => { logout(); setAuthed(false); }} aria-label="Cerrar sesión">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              logout();
+              setAuthed(false);
+              setSongs(SONGS);
+              setPlaylistName(DEFAULT_PLAYLIST_NAME);
+              setCurrentSong(null);
+              setPhase("idle");
+              setIsPaused(false);
+            }}
+            aria-label="Cerrar sesión"
+          >
             <LogOut className="h-5 w-5" />
           </Button>
         </div>
@@ -291,7 +334,6 @@ const Index = () => {
             </div>
           </div>
         )}
-
       </section>
 
       {/* Visualizador de audio */}
