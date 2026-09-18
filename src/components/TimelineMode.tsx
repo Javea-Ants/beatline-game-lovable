@@ -873,8 +873,10 @@ function TeamTimeline({
   // Left-rail layout: team identity lives in a thin vertical strip on the
   // left edge of the timeline frame instead of a bulky top header. This
   // gives the full row height to the actual year cards.
-  const railWidth = compact ? "w-[48px]" : "w-[64px]";
+  const railWidth = compact ? "w-[76px]" : "w-[88px]";
   const railTextTone = isActive ? tone.text : "text-muted-foreground";
+  const btnSize = compact ? "h-6 w-6 text-sm" : "h-8 w-8 text-lg";
+  const counterSize = compact ? "text-lg" : "text-2xl";
 
   return (
     <Card
@@ -882,7 +884,7 @@ function TeamTimeline({
     >
       {/* Compact left rail: badge + name + comodines + progress */}
       <div
-        className={`${railWidth} shrink-0 flex flex-col items-center justify-between py-1 border-r ${tone.borderSoft} ${isActive ? tone.bgTintStrong : tone.bgTint} pr-1`}
+        className={`${railWidth} shrink-0 flex flex-col items-center justify-between py-1 border-r ${tone.borderSoft} ${isActive ? tone.bgTintStrong : tone.bgTint} px-1`}
       >
         <div className="flex flex-col items-center gap-0.5 min-w-0 w-full">
           <span
@@ -895,36 +897,40 @@ function TeamTimeline({
           </span>
         </div>
 
-        {/* Wildcard counter HUD: larger, high-contrast, easy to tap. */}
+        {/* Wildcard stepper HUD: −/★count/+ plus the x/10 progress. */}
         <div className="flex flex-col items-center gap-1 leading-none">
           <div className="flex items-center gap-1">
-            <Star className={`h-4 w-4 ${railTextTone} fill-current`} />
-            <span className="font-black tabular-nums text-base min-w-[1.1ch] text-center">{team.primis}</span>
-          </div>
-          {onAdjustPrimi && (
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                aria-label={`Quitar comodín a ${team.name}`}
-                onClick={() => onAdjustPrimi(-1)}
-                disabled={team.primis <= 0}
-                className={`h-8 w-8 rounded-lg border-2 ${tone.borderSoft} text-base font-black leading-none text-muted-foreground disabled:opacity-30 active:scale-95 touch-manipulation flex items-center justify-center`}
-              >
-                −
-              </button>
-              <button
-                type="button"
-                aria-label={`Dar comodín a ${team.name}`}
-                onClick={() => onAdjustPrimi(1)}
-                className={`h-8 w-8 rounded-lg border-2 ${tone.border} ${tone.text} text-base font-black leading-none active:scale-95 touch-manipulation flex items-center justify-center`}
-              >
-                +
-              </button>
+            <button
+              type="button"
+              aria-label={`Quitar comodín a ${team.name}`}
+              onClick={() => onAdjustPrimi && onAdjustPrimi(-1)}
+              disabled={(onAdjustPrimi ? team.primis <= 0 : true)}
+              className={`${btnSize} rounded-lg border-2 ${tone.borderSoft} font-black leading-none text-muted-foreground disabled:opacity-30 active:scale-95 touch-manipulation flex items-center justify-center`}
+            >
+              −
+            </button>
+            <div className="flex flex-col items-center gap-0">
+              <div className="flex items-center gap-0.5">
+                <Star className={`${compact ? "h-3.5 w-3.5" : "h-5 w-5"} ${railTextTone} fill-current`} />
+                <span className={`font-black tabular-nums ${counterSize} text-center leading-none ${railTextTone}`}>
+                  {team.primis}
+                </span>
+              </div>
+              <span className="text-[8px] font-semibold uppercase tracking-wide text-muted-foreground">Comodín</span>
             </div>
-          )}
-          <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Comodín</span>
-          <div className="font-black tabular-nums text-[10px] text-muted-foreground">
-            {team.timeline.length}/{WIN_TIMELINE_SIZE}
+            <button
+              type="button"
+              aria-label={`Dar comodín a ${team.name}`}
+              onClick={() => onAdjustPrimi && onAdjustPrimi(1)}
+              disabled={!onAdjustPrimi}
+              className={`${btnSize} rounded-lg border-2 ${tone.border} ${tone.text} font-black leading-none active:scale-95 touch-manipulation flex items-center justify-center`}
+            >
+              +
+            </button>
+          </div>
+          <div className="font-black tabular-nums text-sm text-foreground leading-none">
+            {team.timeline.length}
+            <span className="text-muted-foreground">/{WIN_TIMELINE_SIZE}</span>
           </div>
         </div>
         {highlight && (
