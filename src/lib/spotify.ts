@@ -130,7 +130,7 @@ export async function initPlayer(): Promise<string> {
   const token = await getAccessToken();
   if (!token) throw new Error("No token");
   player = new (window as any).Spotify.Player({
-    name: "Hitster Web Player",
+    name: "Beatline Web Player",
     getOAuthToken: (cb: (t: string) => void) => getAccessToken().then((t) => t && cb(t)),
     volume: 0.7,
   });

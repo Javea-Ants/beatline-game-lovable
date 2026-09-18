@@ -1,38 +1,26 @@
-# Beatline Game (Hitster con Spotify)
+# Beatline
 
-Réplica del juego de mesa **Hitster** integrada con la API de Spotify, convertida en **PWA instalable** (funciona en Android e iOS).
+Simple app
 
-## Requisitos
+This project was built with [Lovable](https://lovable.dev).
 
-- Node.js 22+ (recomendado gestionado con [nvm](https://github.com/nvm-sh/nvm))
-- Cuenta de **Spotify Premium** para reproducir música
-- App de Spotify Developer con tu `CLIENT_ID`
+**Live app**: https://beatline-game.lovable.app
 
-## Configuración
+## Build with Lovable
 
-1. Instala dependencias:
+Continue developing this project in the [Lovable editor](https://lovable.dev/projects/0ebadf8d-36c6-49f5-83df-8f640f3d6b95).
 
-   ```bash
-   npm install
-   ```
+- **Ship faster**: describe what you want to build and Lovable handles the code.
+- **Stay in sync**: every change made in Lovable is committed straight to this repository.
+- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
 
-2. Crea una app en [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) y copia tu `CLIENT_ID` en `src/lib/spotify.ts` (constante `CLIENT_ID`).
-3. En la misma app, añade tu URL en **Redirect URIs** (para local: `http://localhost:8080/`).
+## Development
 
-## Desarrollo
+Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
 
-```bash
+```sh
+git clone <this-repository-url>
+cd <repository-name>
+npm i
 npm run dev
 ```
-
-## Compilar
-
-```bash
-npm run build   # genera dist/ con el service worker (sw.js)
-npm run preview # sirve el build para probar
-```
-
-## Desplegar (Cloudflare Pages)
-
-- Repo conectado a GitHub; en Cloudflare Pages importa el repo, comando de build `npm run build` y directorio `dist`.
-- La URL final (`*.pages.dev`) debe añadirse como Redirect URI en tu app de Spotify.

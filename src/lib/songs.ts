@@ -1,8 +1,14 @@
+export type YearSource = "curated" | "spotify";
+
 export interface Song {
   title: string;
   artist: string;
-  year: number;
+  year: number; // Resolved year actually used in the game
   uri: string; // spotify track URI
+  spotifyTrackId?: string;
+  spotifyYear?: number; // Year from Spotify release_date, before override
+  curatedYear?: number; // Year from curated CSV, when available
+  yearSource?: YearSource;
 }
 
 // 20 temazos de varias décadas con año original de lanzamiento

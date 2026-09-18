@@ -4,28 +4,28 @@
 
 @layer base {
   :root {
-    --background: 0 0% 4%;
-    --foreground: 280 100% 95%;
-    --card: 0 0% 8%;
-    --card-foreground: 280 100% 95%;
-    --popover: 0 0% 8%;
-    --popover-foreground: 280 100% 95%;
-    --primary: 280 100% 60%;
-    --primary-foreground: 0 0% 0%;
-    --secondary: 0 0% 12%;
-    --secondary-foreground: 280 100% 95%;
-    --muted: 0 0% 14%;
-    --muted-foreground: 280 20% 70%;
-    --accent: 280 100% 60%;
-    --accent-foreground: 0 0% 0%;
+    --background: 165 30% 4%;
+    --foreground: 160 40% 96%;
+    --card: 165 25% 8%;
+    --card-foreground: 160 40% 96%;
+    --popover: 165 25% 8%;
+    --popover-foreground: 160 40% 96%;
+    --primary: 162 90% 48%;
+    --primary-foreground: 165 50% 6%;
+    --secondary: 165 20% 12%;
+    --secondary-foreground: 160 40% 96%;
+    --muted: 165 18% 14%;
+    --muted-foreground: 160 15% 70%;
+    --accent: 162 90% 48%;
+    --accent-foreground: 165 50% 6%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 280 50% 25%;
-    --input: 0 0% 14%;
-    --ring: 280 100% 60%;
+    --border: 162 40% 22%;
+    --input: 165 18% 14%;
+    --ring: 162 90% 48%;
     --radius: 1rem;
-    --neon: 280 100% 65%;
-    --neon-glow: 0 0 20px hsl(280 100% 60% / 0.6), 0 0 40px hsl(280 100% 60% / 0.4);
+    --neon: 162 90% 55%;
+    --neon-glow: 0 0 20px hsl(162 90% 50% / 0.6), 0 0 40px hsl(162 90% 50% / 0.4);
   }
 }
 
@@ -61,5 +61,29 @@
       0 0 96px hsl(var(--neon) / 0.4);
     filter: drop-shadow(0 0 12px hsl(var(--neon) / 0.7));
     transform: translateY(-1px);
+  }
+
+  .playlist-scroll-area {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary) / 0.55) hsl(var(--muted) / 0.35);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .playlist-scroll-area::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .playlist-scroll-area::-webkit-scrollbar-track {
+    background: hsl(var(--muted) / 0.35);
+  }
+
+  .playlist-scroll-area::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.55);
+    border: 2px solid hsl(var(--background));
+    border-radius: 999px;
+  }
+
+  .playlist-scroll-area::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.75);
   }
 }

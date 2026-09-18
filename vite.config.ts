@@ -19,13 +19,13 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "icon-192.png", "icon-512.png"],
       manifest: {
-        name: "Hitster Spotify",
-        short_name: "Hitster",
-        description: "Juego musical estilo Hitster con Spotify",
+        name: "Beatline",
+        short_name: "Beatline",
+        description: "Juego de fiesta para ordenar canciones en su línea de tiempo musical.",
         start_url: "/",
         display: "standalone",
-        background_color: "#000000",
-        theme_color: "#a855f7",
+        background_color: "#0a0a0a",
+        theme_color: "#10b981",
         icons: [
           { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
           { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
